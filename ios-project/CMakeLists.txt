@@ -1,21 +1,17 @@
 cmake_minimum_required(VERSION 3.16)
-project(vincepong_ios LANGUAGES C)
 
-# Include your top-level build logic
-include(${CMAKE_SOURCE_DIR}/CMakeLists.txt)
-
-# Only proceed if this is an iOS build
+# Only apply iOS-specific settings if building for iOS
 if(IOS)
-    # Change executable to shared lib called "main"
     set_target_properties(main PROPERTIES
         MACOSX_BUNDLE YES
-        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/ios-project/Info.plist"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
         XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
-        RESOURCE "${CMAKE_SOURCE_DIR}/ios-project/LaunchScreen.storyboard"
+        RESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/LaunchScreen.storyboard"
     )
 
-    # Copy the asset catalog so Xcode can bundle it
+    # Add asset catalog and storyboard as sources
     target_sources(main PRIVATE
-        "${CMAKE_SOURCE_DIR}/ios-project/LaunchScreen.storyboard"
+        "${CMAKE_CURRENT_SOURCE_DIR}/LaunchScreen.storyboard"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Assets.xcassets"
     )
 endif()
