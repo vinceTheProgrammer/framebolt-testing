@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 # Only apply iOS-specific settings if building for iOS
 if(IOS)
-    set_target_properties(main PROPERTIES
+    set_target_properties(framebolt PROPERTIES
         MACOSX_BUNDLE YES
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
         XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
@@ -10,7 +10,7 @@ if(IOS)
     )
 
     # Add asset catalog and storyboard as sources
-    target_sources(main PRIVATE
+    target_sources(framebolt PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/LaunchScreen.storyboard"
         "${CMAKE_CURRENT_SOURCE_DIR}/Assets.xcassets"
     )
