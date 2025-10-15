@@ -20,7 +20,12 @@ endif()
 # Link to SDL3
 target_link_libraries(framebolt PRIVATE SDL3::SDL3)
 
-# Include iOS-specific configurations if building for iOS
+# iOS-specific bundle properties
 if(IOS)
+    set_target_properties(framebolt PROPERTIES
+        MACOSX_BUNDLE YES
+        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2" # iPhone + iPad
+        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-"
+    )
     add_subdirectory(ios-project)
 endif()
