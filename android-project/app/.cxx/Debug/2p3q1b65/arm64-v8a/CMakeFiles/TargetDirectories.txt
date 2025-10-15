@@ -1,0 +1,8 @@
+/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/CMakeFiles/main.dir
+/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/CMakeFiles/edit_cache.dir
+/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/CMakeFiles/rebuild_cache.dir
+/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/vendored/SDL/CMakeFiles/SDL3-shared.dir
+/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/vendored/SDL/CMakeFiles/SDL3_test.dir
+/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/vendored/SDL/CMakeFiles/SDL_uclibc.dir
+/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/vendored/SDL/CMakeFiles/edit_cache.dir
+/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/vendored/SDL/CMakeFiles/rebuild_cache.dir
