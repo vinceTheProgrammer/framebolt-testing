@@ -5,6 +5,11 @@ project(framebolt)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
+if(NOT IOS AND NOT ANDROID)
+    set(SDL_SHARED OFF CACHE BOOL "Build shared SDL library" FORCE)
+    set(SDL_STATIC ON CACHE BOOL "Build static SDL library" FORCE)
+endif()
+
 # Add SDL subdirectory
 add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
 
