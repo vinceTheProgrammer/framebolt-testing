@@ -42,7 +42,7 @@ jobs:
               cmake --build build-macos --config Release
               mkdir -p artifacts
               cp -R build/*.app artifacts/ 2>/dev/null || true
-              cp build/framebolt artifacts/framebolt-macos || true
+              cp build-macos/Release/framebolt artifacts/framebolt-macos || true
               cd artifacts && zip -r ../framebolt-macos.zip ./*
             artifact: framebolt-macos.zip
 
