@@ -26,6 +26,13 @@ if(IOS)
         MACOSX_BUNDLE YES
         XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2" # iPhone + iPad
         XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
+        XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+        RESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/LaunchScreen.storyboard"
     )
-    add_subdirectory(ios-project)
+    # Add asset catalog and storyboard as sources
+    target_sources(framebolt PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/LaunchScreen.storyboard"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Assets.xcassets"
+    )
 endif()
