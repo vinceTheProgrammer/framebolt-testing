@@ -2,3 +2,4 @@ build
 vendored
 build-android
 android-project
+android-project/.gradle
