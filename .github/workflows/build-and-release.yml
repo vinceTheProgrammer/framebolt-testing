@@ -1,0 +1,131 @@
+name: Build and Release Framebolt
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # --- DESKTOP: Linux ---
+          - name: Desktop (Linux)
+            os: ubuntu-latest
+            build_script: |
+              cmake -S . -B build
+              cmake --build build --config Release
+              zip -j framebolt-linux.zip build/framebolt
+            artifact: framebolt-linux.zip
+
+          # --- DESKTOP: Windows ---
+          - name: Desktop (Windows)
+            os: windows-latest
+            build_script: |
+              cmake -S . -B build
+              cmake --build build --config Release
+              powershell Compress-Archive -Path build\\Release\\*.exe -DestinationPath framebolt-windows.zip
+            artifact: framebolt-windows.zip
+
+          # --- DESKTOP: macOS ---
+          - name: Desktop (macOS)
+            os: macos-latest
+            build_script: |
+              cmake -S . -B build
+              cmake --build build --config Release
+              mkdir -p artifacts
+              cp -R build/*.app artifacts/ 2>/dev/null || true
+              cp build/framebolt artifacts/framebolt-macos || true
+              cd artifacts && zip -r ../framebolt-macos.zip ./*
+            artifact: framebolt-macos.zip
+
+          # --- MOBILE: Android ---
+          - name: Android
+            os: ubuntu-latest
+            build_script: |
+              cd android-project
+              ./gradlew assembleRelease
+              mkdir -p ../artifacts
+              cp app/build/outputs/apk/release/*.apk ../artifacts/
+              cd ../artifacts && zip -r framebolt-android.zip ./*
+            artifact: artifacts/framebolt-android.zip
+
+          # --- MOBILE: iOS ---
+          - name: iOS
+            os: macos-latest
+            build_script: |
+              cmake -S . -B build-ios -G Xcode \
+                -DCMAKE_SYSTEM_NAME=iOS \
+                -DCMAKE_OSX_SYSROOT=iphonesimulator \
+                -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+              cmake --build build-ios --config Debug
+              mkdir -p artifacts
+              find build-ios -name "*.app" -exec cp -R {} artifacts/ \;
+              cd artifacts && zip -r ../framebolt-ios.zip ./*
+            artifact: framebolt-ios.zip
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up dependencies (Linux/Mac only)
+        if: runner.os != 'Windows'
+        run: |
+          git clone https://github.com/libsdl-org/SDL.git vendored/SDL
+          sudo apt-get update || true
+          sudo apt-get install -y zip cmake || true
+
+      - name: Set up dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          git clone https://github.com/libsdl-org/SDL.git vendored/SDL
+
+      - name: Build ${{ matrix.name }}
+        run: ${{ matrix.build_script }}
+
+      - name: Upload CI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: ignore
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Determine release type
+        id: release_type
+        run: |
+          if [[ "${GITHUB_REF##*/}" == "main" ]]; then
+            echo "release_type=release" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          else
+            echo "release_type=pre-release" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Framebolt ${{ github.run_number }}
+          prerelease: ${{ steps.release_type.outputs.prerelease }}
+          files: release-assets/**/*
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
