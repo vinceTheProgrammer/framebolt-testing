@@ -23,7 +23,11 @@ else()
 endif()
 
 # Link to SDL3
-target_link_libraries(framebolt PRIVATE SDL3::SDL3)
+if(ANDROID)
+    target_link_libraries(main PRIVATE SDL3::SDL3)
+else()
+    target_link_libraries(framebolt PRIVATE SDL3::SDL3)
+endif()
 
 # iOS-specific bundle properties
 if(IOS)
