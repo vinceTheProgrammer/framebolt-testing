@@ -41,41 +41,41 @@ include CMakeFiles/rules.ninja
 
 cmake_ninja_workdir = /home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/
 # =============================================================================
-# Object build statements for SHARED_LIBRARY target main
+# Object build statements for SHARED_LIBRARY target framebolt
 
 
 #############################################
-# Order-only phony target for main
+# Order-only phony target for framebolt
 
-build cmake_object_order_depends_target_main: phony || cmake_object_order_depends_target_SDL3-shared
+build cmake_object_order_depends_target_framebolt: phony || cmake_object_order_depends_target_SDL3-shared
 
-build CMakeFiles/main.dir/main.c.o: C_COMPILER__main_Debug /home/vince/Projects/framebolt/main.c || cmake_object_order_depends_target_main
-  DEFINES = -Dmain_EXPORTS
-  DEP_FILE = CMakeFiles/main.dir/main.c.o.d
+build CMakeFiles/framebolt.dir/main.c.o: C_COMPILER__framebolt_Debug /home/vince/Projects/framebolt/main.c || cmake_object_order_depends_target_framebolt
+  DEFINES = -Dframebolt_EXPORTS
+  DEP_FILE = CMakeFiles/framebolt.dir/main.c.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC
   INCLUDES = -I/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/vendored/SDL/include-revision -I/home/vince/Projects/framebolt/vendored/SDL/include
-  OBJECT_DIR = CMakeFiles/main.dir
-  OBJECT_FILE_DIR = CMakeFiles/main.dir
+  OBJECT_DIR = CMakeFiles/framebolt.dir
+  OBJECT_FILE_DIR = CMakeFiles/framebolt.dir
 
 
 # =============================================================================
-# Link build statements for SHARED_LIBRARY target main
+# Link build statements for SHARED_LIBRARY target framebolt
 
 
 #############################################
-# Link the shared library Debug/libmain.so
+# Link the shared library Debug/libframebolt.so
 
-build Debug/libmain.so: C_SHARED_LIBRARY_LINKER__main_Debug CMakeFiles/main.dir/main.c.o | Debug/libSDL3.so ../../../../../../vendored/SDL/src/dynapi/SDL_dynapi.sym || Debug/libSDL3.so
+build Debug/libframebolt.so: C_SHARED_LIBRARY_LINKER__framebolt_Debug CMakeFiles/framebolt.dir/main.c.o | Debug/libSDL3.so ../../../../../../vendored/SDL/src/dynapi/SDL_dynapi.sym || Debug/libSDL3.so
   LANGUAGE_COMPILE_FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -fno-limit-debug-info
   LINK_FLAGS = -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments
   LINK_LIBRARIES = Debug/libSDL3.so  -latomic -lm
-  OBJECT_DIR = CMakeFiles/main.dir
+  OBJECT_DIR = CMakeFiles/framebolt.dir
   POST_BUILD = :
   PRE_LINK = :
-  SONAME = libmain.so
+  SONAME = libframebolt.so
   SONAME_FLAG = -Wl,-soname,
-  TARGET_FILE = Debug/libmain.so
-  TARGET_PDB = main.so.dbg
+  TARGET_FILE = Debug/libframebolt.so
+  TARGET_PDB = framebolt.so.dbg
 
 
 #############################################
@@ -2280,15 +2280,15 @@ build SDL3_test: phony vendored/SDL/libSDL3_test.a
 
 build SDL_uclibc: phony vendored/SDL/libSDL_uclibc.a
 
+build framebolt: phony Debug/libframebolt.so
+
 build libSDL3.so: phony Debug/libSDL3.so
 
 build libSDL3_test.a: phony vendored/SDL/libSDL3_test.a
 
 build libSDL_uclibc.a: phony vendored/SDL/libSDL_uclibc.a
 
-build libmain.so: phony Debug/libmain.so
-
-build main: phony Debug/libmain.so
+build libframebolt.so: phony Debug/libframebolt.so
 
 # =============================================================================
 # Folder targets.
@@ -2298,7 +2298,7 @@ build main: phony Debug/libmain.so
 #############################################
 # Folder: /home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a
 
-build all: phony Debug/libmain.so
+build all: phony Debug/libframebolt.so
 
 # =============================================================================
 

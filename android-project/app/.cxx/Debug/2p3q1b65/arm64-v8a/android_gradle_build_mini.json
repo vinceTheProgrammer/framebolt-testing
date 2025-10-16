@@ -35,14 +35,6 @@
     "{LIST_OF_TARGETS_TO_BUILD}"
   ],
   "libraries": {
-    "main::@6890427a1f51a3e7e1df": {
-      "artifactName": "main",
-      "abi": "arm64-v8a",
-      "output": "/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/Debug/libmain.so",
-      "runtimeFiles": [
-        "/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/Debug/libSDL3.so"
-      ]
-    },
     "SDL3-shared::@8fb704815aaca498baa2": {
       "artifactName": "SDL3-shared",
       "abi": "arm64-v8a",
@@ -60,6 +52,14 @@
       "abi": "arm64-v8a",
       "output": "/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/vendored/SDL/libSDL_uclibc.a",
       "runtimeFiles": []
+    },
+    "framebolt::@6890427a1f51a3e7e1df": {
+      "artifactName": "framebolt",
+      "abi": "arm64-v8a",
+      "output": "/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/Debug/libframebolt.so",
+      "runtimeFiles": [
+        "/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/Debug/libSDL3.so"
+      ]
     }
   }
 }

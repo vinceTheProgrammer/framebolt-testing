@@ -54,11 +54,11 @@
       "artifactName": "SDL_uclibc",
       "output": "/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/vendored/SDL/libSDL_uclibc.a"
     },
-    "main::@6890427a1f51a3e7e1df": {
+    "framebolt::@6890427a1f51a3e7e1df": {
       "toolchain": "toolchain",
       "abi": "arm64-v8a",
-      "artifactName": "main",
-      "output": "/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/Debug/libmain.so",
+      "artifactName": "framebolt",
+      "output": "/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/Debug/libframebolt.so",
       "runtimeFiles": [
         "/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/Debug/libSDL3.so"
       ]

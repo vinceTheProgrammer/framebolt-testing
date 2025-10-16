@@ -1,7 +1,7 @@
 [
 {
   "directory": "/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a",
-  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android21 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dmain_EXPORTS -I/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/vendored/SDL/include-revision -I/home/vince/Projects/framebolt/vendored/SDL/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/main.dir/main.c.o -c /home/vince/Projects/framebolt/main.c",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android21 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dframebolt_EXPORTS -I/home/vince/Projects/framebolt/android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/vendored/SDL/include-revision -I/home/vince/Projects/framebolt/vendored/SDL/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/framebolt.dir/main.c.o -c /home/vince/Projects/framebolt/main.c",
   "file": "/home/vince/Projects/framebolt/main.c"
 },
 {
