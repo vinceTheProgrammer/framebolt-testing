@@ -38,8 +38,8 @@ jobs:
           - name: Desktop (macOS)
             os: macos-latest
             build_script: |
-              cmake -S . -B build
-              cmake --build build --config Release
+              cmake -S . -B build-macos -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+              cmake --build build-macos --config Release
               mkdir -p artifacts
               cp -R build/*.app artifacts/ 2>/dev/null || true
               cp build/framebolt artifacts/framebolt-macos || true
