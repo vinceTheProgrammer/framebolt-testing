@@ -51,10 +51,11 @@ jobs:
           # --- MOBILE: Android ---
           - name: Android
             os: ubuntu-latest
-            gst_android_url: "https://gstreamer.freedesktop.org/data/pkg/android/1.26.7/gstreamer-1.0-android-universal-1.26.7.tar.xz"
+            env:
+              GST_ANDROID_URL: "https://gstreamer.freedesktop.org/data/pkg/android/1.26.7/gstreamer-1.0-android-universal-1.26.7.tar.xz"
             build_script: |
               mkdir -p android-project/app/src/main/jni/
-              curl -L ${{ matrix.gst_android_url }} -o gstreamer-android.tar.xz
+              curl -L "$GST_ANDROID_URL" -o gstreamer-android.tar.xz
               tar -xf gstreamer-android.tar.xz
               mv gstreamer-1.0-android-universal-* android-project/app/src/main/jni/gstreamer
               cd android-project
@@ -67,9 +68,10 @@ jobs:
           # --- MOBILE: iOS ---
           - name: iOS
             os: macos-latest
-            gst_ios_url: "https://gstreamer.freedesktop.org/data/pkg/ios/1.26.7/gstreamer-1.0-ios-universal-1.26.7.tar.xz"
+            env:
+              GST_IOS_URL: "https://gstreamer.freedesktop.org/data/pkg/ios/1.26.7/gstreamer-1.0-ios-universal-1.26.7.tar.xz"
             build_script: |
-              curl -L ${{ matrix.gst_ios_url }} -o gstreamer-ios.tar.xz
+              curl -L "$GST_IOS_URL" -o gstreamer-ios.tar.xz
               tar -xf gstreamer-ios.tar.xz
               GST_IOS_DIR=$(find . -type d -name "gstreamer-1.0-ios-universal-*")
               cmake -S . -B build-ios -G Xcode \
