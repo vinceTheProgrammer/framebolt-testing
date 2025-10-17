@@ -137,14 +137,21 @@ jobs:
         if: runner.os != 'Windows' && !matrix.use_system_gst
         run: |
           mkdir -p $HOME/.cache/gstreamer
-          if [ ! -f "$HOME/.cache/gstreamer/gstreamer-${{ matrix.name | lower }}.tar.xz" ]; then
+
+          # Normalize name to lowercase for file naming
+          NAME_LOWER=$(echo "${{ matrix.name }}" | tr '[:upper:]' '[:lower:]')
+
+          if [ ! -f "$HOME/.cache/gstreamer/gstreamer-${NAME_LOWER}.tar.xz" ]; then
             if [ "${{ matrix.gst_pkg_url }}" != "" ]; then
-              curl -L ${{ matrix.gst_pkg_url }} -o $HOME/.cache/gstreamer/gstreamer-macos.pkg
-              sudo installer -pkg $HOME/.cache/gstreamer/gstreamer-macos.pkg -target /
+              echo "Downloading GStreamer macOS SDK..."
+              curl -L "${{ matrix.gst_pkg_url }}" -o "$HOME/.cache/gstreamer/gstreamer-macos.pkg"
+              sudo installer -pkg "$HOME/.cache/gstreamer/gstreamer-macos.pkg" -target /
             elif [ "${{ matrix.gst_android_url }}" != "" ]; then
-              curl -L ${{ matrix.gst_android_url }} -o $HOME/.cache/gstreamer/gstreamer-android.tar.xz
+              echo "Downloading GStreamer Android SDK..."
+              curl -L "${{ matrix.gst_android_url }}" -o "$HOME/.cache/gstreamer/gstreamer-android.tar.xz"
             elif [ "${{ matrix.gst_ios_url }}" != "" ]; then
-              curl -L ${{ matrix.gst_ios_url }} -o $HOME/.cache/gstreamer/gstreamer-ios.tar.xz
+              echo "Downloading GStreamer iOS SDK..."
+              curl -L "${{ matrix.gst_ios_url }}" -o "$HOME/.cache/gstreamer/gstreamer-ios.tar.xz"
             fi
           fi
 
