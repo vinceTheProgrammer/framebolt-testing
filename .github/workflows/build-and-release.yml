@@ -79,6 +79,10 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           git clone https://github.com/libsdl-org/SDL.git vendored/SDL
+          git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf
+          cd vendored/SDL_ttf
+          ./external/download.sh
+          cd ../..
           sudo apt-get update || true
           sudo apt-get install -y \
             build-essential cmake zip git \
@@ -91,6 +95,10 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           git clone https://github.com/libsdl-org/SDL.git vendored/SDL
+          git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf
+          cd vendored/SDL_ttf
+          ./external/Get-GitModules.ps1
+          cd ../..
 
       - name: Build ${{ matrix.name }}
         run: ${{ matrix.build_script }}
