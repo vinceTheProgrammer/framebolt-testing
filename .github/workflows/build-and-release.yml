@@ -98,6 +98,7 @@ jobs:
           key: sdl-vendored-${{ runner.os }}
 
       - name: Set up SDL dependencies
+        shell: bash
         run: |
           if [ ! -d vendored ]; then mkdir vendored; fi
           if [ ! -d vendored/SDL ]; then git clone https://github.com/libsdl-org/SDL.git vendored/SDL; fi
