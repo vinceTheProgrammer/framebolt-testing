@@ -78,7 +78,7 @@ jobs:
           - name: iOS
             os: macos-latest
             download_script: |
-              GST_IOS_URL="https://gstreamer.freedesktop.org/data/pkg/ios/1.26.7/gstreamer-1.0-ios-universal-1.26.7.tar.xz"
+              GST_IOS_URL="https://gstreamer.freedesktop.org/data/pkg/ios/1.26.7/gstreamer-1.0-devel-1.26.7-ios-universal.pkg"
               echo "Downloading $GST_IOS_URL..."
               curl -L "$GST_IOS_URL" -o gstreamer-ios.tar.xz
               tar -xf gstreamer-ios.tar.xz
@@ -132,13 +132,7 @@ jobs:
 
 
 
-      - name: Debug GStreamer path (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          echo "=== Checking GStreamer locations ==="
-          Get-ChildItem -Recurse C:\gstreamer\1.0\ | Select-Object FullName
-          echo "=== Environment Variables ==="
-          Get-ChildItem Env:
+
       - name: Debug GStreamer path (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -150,17 +144,17 @@ jobs:
       - name: Debug GStreamer archive (Android)
         if: matrix.name == 'Android'
         run: |
-          echo "=== Listing downloaded GStreamer cache ==="
-          ls -lh $HOME/.cache/gstreamer || true
+          echo "=== Listing downloaded GStreamer ==="
+          ls -lh || true
           echo "=== Checking for GStreamer tarballs ==="
-          file $HOME/.cache/gstreamer/* || true
+          file * || true
       - name: Debug GStreamer archive (iOS)
         if: matrix.name == 'iOS'
         run: |
           echo "=== Listing downloaded iOS GStreamer cache ==="
-          ls -lh $HOME/.cache/gstreamer || true
+          ls -lh || true
           echo "=== File type check ==="
-          file $HOME/.cache/gstreamer/* || true
+          file * || true
 
 
       - name: Download GStreamer ${{ matrix.name }}
