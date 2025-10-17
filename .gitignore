@@ -5,3 +5,5 @@ build-android
 .cxx
 .vscode
 .cache
+ttf_bundle_later
+DejaVuSans.ttf

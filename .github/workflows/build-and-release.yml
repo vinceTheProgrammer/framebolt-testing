@@ -19,8 +19,9 @@ jobs:
           # --- DESKTOP: Linux ---
           - name: Desktop (Linux)
             os: ubuntu-latest
+            use_system_gst: true
             build_script: |
-              cmake -S . -B build
+              cmake -S . -B build -DUSE_SYSTEM_GSTREAMER=ON
               cmake --build build --config Release
               zip -j framebolt-linux.zip build/framebolt
             artifact: framebolt-linux.zip
@@ -28,8 +29,10 @@ jobs:
           # --- DESKTOP: Windows ---
           - name: Desktop (Windows)
             os: windows-latest
+            gst_cache_key: gstreamer-windows-1.26.7
+            gst_dev_url: "https://gstreamer.freedesktop.org/data/pkg/windows/1.26.7/msvc/gstreamer-1.0-devel-msvc-x86_64-1.26.7.msi"
             build_script: |
-              cmake -S . -B build
+              cmake -S . -B build -DCMAKE_PREFIX_PATH="C:\\gstreamer\\1.0\\x86_64"
               cmake --build build --config Release
               powershell Compress-Archive -Path build\\Release\\*.exe -DestinationPath framebolt-windows.zip
             artifact: framebolt-windows.zip
@@ -37,6 +40,8 @@ jobs:
           # --- DESKTOP: macOS ---
           - name: Desktop (macOS)
             os: macos-latest
+            gst_cache_key: gstreamer-macos-1.26.7
+            gst_pkg_url: "https://gstreamer.freedesktop.org/data/pkg/osx/1.26.7/gstreamer-1.0-devel-1.26.7-universal.pkg"
             build_script: |
               cmake -S . -B build-macos -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
               cmake --build build-macos --config Release
@@ -49,7 +54,12 @@ jobs:
           # --- MOBILE: Android ---
           - name: Android
             os: ubuntu-latest
+            gst_cache_key: gstreamer-android-1.26.7
+            gst_android_url: "https://gstreamer.freedesktop.org/data/pkg/android/1.26.7/gstreamer-1.0-android-universal-1.26.7.tar.xz"
             build_script: |
+              mkdir -p android-project/app/src/main/jni/
+              tar -xf $HOME/.cache/gstreamer/gstreamer-android.tar.xz
+              mv gstreamer-1.0-android-universal-* android-project/app/src/main/jni/gstreamer
               cd android-project
               ./gradlew assembleRelease
               mkdir -p ../artifacts
@@ -60,11 +70,16 @@ jobs:
           # --- MOBILE: iOS ---
           - name: iOS
             os: macos-latest
+            gst_cache_key: gstreamer-ios-1.26.7
+            gst_ios_url: "https://gstreamer.freedesktop.org/data/pkg/ios/1.26.7/gstreamer-1.0-ios-universal-1.26.7.tar.xz"
             build_script: |
+              tar -xf $HOME/.cache/gstreamer/gstreamer-ios.tar.xz
+              GST_IOS_DIR=$(find . -type d -name "gstreamer-1.0-ios-universal-*")
               cmake -S . -B build-ios -G Xcode \
                 -DCMAKE_SYSTEM_NAME=iOS \
                 -DCMAKE_OSX_SYSROOT=iphonesimulator \
-                -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+                -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
+                -DCMAKE_PREFIX_PATH="$GST_IOS_DIR"
               cmake --build build-ios --config Debug
               mkdir -p artifacts
               find build-ios -name "*.app" -exec cp -R {} artifacts/ \;
@@ -75,31 +90,65 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up dependencies (Linux/Mac only)
-        if: runner.os != 'Windows'
+      # --- Cache SDL sources (saves ~5 min each run) ---
+      - name: Cache SDL sources
+        uses: actions/cache@v4
+        with:
+          path: vendored
+          key: sdl-vendored-${{ runner.os }}
+
+      - name: Set up SDL dependencies
         run: |
-          git clone https://github.com/libsdl-org/SDL.git vendored/SDL
-          git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf
-          cd vendored/SDL_ttf
-          ./external/download.sh
-          cd ../..
+          if [ ! -d vendored ]; then mkdir vendored; fi
+          if [ ! -d vendored/SDL ]; then git clone https://github.com/libsdl-org/SDL.git vendored/SDL; fi
+          if [ ! -d vendored/SDL_ttf ]; then git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf; fi
+          cd vendored/SDL_ttf && ./external/download.sh && cd ../..
+
+      # --- Platform-specific dependencies ---
+      - name: Set up Linux deps
+        if: runner.os == 'Linux'
+        run: |
           sudo apt-get update || true
           sudo apt-get install -y \
             build-essential cmake zip git \
             libx11-dev libxext-dev libxrandr-dev libxrender-dev libxss-dev \
             libxcursor-dev libxi-dev libxinerama-dev libwayland-dev libxkbcommon-dev \
             libdrm-dev libgbm-dev libasound2-dev libpulse-dev libudev-dev libdbus-1-dev \
-            libibus-1.0-dev fcitx-libs-dev || true
+            libibus-1.0-dev fcitx-libs-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
-      - name: Set up dependencies (Windows)
-        if: runner.os == 'Windows'
+      # --- Cache and setup GStreamer ---
+      - name: Cache GStreamer SDK
+        if: ${{ !matrix.use_system_gst }}
+        uses: actions/cache@v4
+        with:
+          path: $HOME/.cache/gstreamer
+          key: ${{ matrix.gst_cache_key }}
+
+      - name: Download GStreamer SDK (Windows)
+        if: runner.os == 'Windows' && !matrix.use_system_gst
         run: |
-          git clone https://github.com/libsdl-org/SDL.git vendored/SDL
-          git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf
-          cd vendored/SDL_ttf
-          ./external/Get-GitModules.ps1
-          cd ../..
+          mkdir -p $env:USERPROFILE\.cache\gstreamer
+          if (!(Test-Path "$env:USERPROFILE\.cache\gstreamer\gstreamer-devel.msi")) {
+            Invoke-WebRequest -Uri ${{ matrix.gst_dev_url }} -OutFile "$env:USERPROFILE\.cache\gstreamer\gstreamer-devel.msi"
+          }
+          msiexec /i "$env:USERPROFILE\.cache\gstreamer\gstreamer-devel.msi" /qn TARGETDIR="C:\\gstreamer"
 
+      - name: Download GStreamer SDK (macOS/iOS/Android)
+        if: runner.os != 'Windows' && !matrix.use_system_gst
+        run: |
+          mkdir -p $HOME/.cache/gstreamer
+          if [ ! -f "$HOME/.cache/gstreamer/gstreamer-${{ matrix.name | lower }}.tar.xz" ]; then
+            if [ "${{ matrix.gst_pkg_url }}" != "" ]; then
+              curl -L ${{ matrix.gst_pkg_url }} -o $HOME/.cache/gstreamer/gstreamer-macos.pkg
+              sudo installer -pkg $HOME/.cache/gstreamer/gstreamer-macos.pkg -target /
+            elif [ "${{ matrix.gst_android_url }}" != "" ]; then
+              curl -L ${{ matrix.gst_android_url }} -o $HOME/.cache/gstreamer/gstreamer-android.tar.xz
+            elif [ "${{ matrix.gst_ios_url }}" != "" ]; then
+              curl -L ${{ matrix.gst_ios_url }} -o $HOME/.cache/gstreamer/gstreamer-ios.tar.xz
+            fi
+          fi
+
+      # --- Build ---
       - name: Build ${{ matrix.name }}
         run: ${{ matrix.build_script }}
 
@@ -139,6 +188,5 @@ jobs:
           name: Framebolt ${{ github.run_number }}
           prerelease: ${{ steps.release_type.outputs.prerelease }}
           files: release-assets/**/*
-
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
