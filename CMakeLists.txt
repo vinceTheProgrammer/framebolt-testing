@@ -30,18 +30,26 @@ link_directories(${GSTREAMER_LIBRARY_DIRS})
 if(IOS)
     add_executable(framebolt MACOSX_BUNDLE main.c)
 elseif(ANDROID)
-    add_library(framebolt SHARED main.c)
+    add_library(main SHARED main.c)
 else()
     add_executable(framebolt WIN32 main.c)
 endif()
 
-# Link to SDL3
-target_link_libraries(framebolt 
-    PRIVATE 
+if(ANDROID)
+target_link_libraries(main
+    PRIVATE
         SDL3_ttf::SDL3_ttf
         SDL3::SDL3
         ${GSTREAMER_LIBRARIES}
 )
+else()
+target_link_libraries(framebolt
+    PRIVATE
+        SDL3_ttf::SDL3_ttf
+        SDL3::SDL3
+        ${GSTREAMER_LIBRARIES}
+)
+endif()
 
 # iOS-specific bundle properties
 if(IOS)
