@@ -99,11 +99,22 @@ jobs:
 
       - name: Set up SDL dependencies
         shell: bash
+        if: runner.os != 'Windows'
         run: |
-          if [ ! -d vendored ]; then mkdir vendored; fi
-          if [ ! -d vendored/SDL ]; then git clone https://github.com/libsdl-org/SDL.git vendored/SDL; fi
-          if [ ! -d vendored/SDL_ttf ]; then git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf; fi
+          mkdir -p vendored
+          git clone https://github.com/libsdl-org/SDL.git vendored/SDL || true
+          git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf || true
           cd vendored/SDL_ttf && ./external/download.sh && cd ../..
+
+      - name: Set up SDL dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          if (!(Test-Path "vendored")) { New-Item -ItemType Directory -Path "vendored" | Out-Null }
+          if (!(Test-Path "vendored/SDL")) { git clone https://github.com/libsdl-org/SDL.git vendored/SDL }
+          if (!(Test-Path "vendored/SDL_ttf")) { git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf }
+          cd vendored/SDL_ttf
+          powershell ./external/Get-GitModules.ps1
+          cd ../..
 
       # --- Platform-specific dependencies ---
       - name: Set up Linux deps
