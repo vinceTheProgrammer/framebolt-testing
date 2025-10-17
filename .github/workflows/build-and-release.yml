@@ -52,10 +52,10 @@ jobs:
           # --- MOBILE: Android ---
           - name: Android
             os: ubuntu-latest
-            env:
-              GST_ANDROID_URL: "https://gstreamer.freedesktop.org/data/pkg/android/1.26.7/gstreamer-1.0-android-universal-1.26.7.tar.xz"
             build_script: |
+              GST_ANDROID_URL="https://gstreamer.freedesktop.org/data/pkg/android/1.26.7/gstreamer-1.0-android-universal-1.26.7.tar.xz"
               mkdir -p android-project/app/src/main/jni/
+              echo "Downloading $GST_ANDROID_URL..."
               curl -L "$GST_ANDROID_URL" -o gstreamer-android.tar.xz
               tar -xf gstreamer-android.tar.xz
               mv gstreamer-1.0-android-universal-* android-project/app/src/main/jni/gstreamer
@@ -66,12 +66,13 @@ jobs:
               cd ../artifacts && zip -r framebolt-android.zip ./*
             artifact: artifacts/framebolt-android.zip
 
+
           # --- MOBILE: iOS ---
           - name: iOS
             os: macos-latest
-            env:
-              GST_IOS_URL: "https://gstreamer.freedesktop.org/data/pkg/ios/1.26.7/gstreamer-1.0-ios-universal-1.26.7.tar.xz"
             build_script: |
+              GST_IOS_URL="https://gstreamer.freedesktop.org/data/pkg/ios/1.26.7/gstreamer-1.0-ios-universal-1.26.7.tar.xz"
+              echo "Downloading $GST_IOS_URL..."
               curl -L "$GST_IOS_URL" -o gstreamer-ios.tar.xz
               tar -xf gstreamer-ios.tar.xz
               GST_IOS_DIR=$(find . -type d -name "gstreamer-1.0-ios-universal-*")
@@ -119,6 +120,42 @@ jobs:
           echo "Installing GStreamer..."
           curl -L ${{ matrix.gst_dev_url }} -o gstreamer-devel.msi
           msiexec /i gstreamer-devel.msi /qn TARGETDIR="C:\\gstreamer"
+
+
+
+
+      - name: Debug GStreamer path (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo "=== Checking GStreamer locations ==="
+          Get-ChildItem -Recurse C:\gstreamer\1.0\ | Select-Object FullName
+          echo "=== Environment Variables ==="
+          Get-ChildItem Env:
+      - name: Debug GStreamer path (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          echo "=== Checking for installed GStreamer frameworks ==="
+          ls -R /Library/Frameworks || true
+          echo "=== Checking GStreamer in /usr/local and /opt/homebrew ==="
+          ls -R /usr/local/Cellar/gstreamer* 2>/dev/null || true
+          ls -R /opt/homebrew/Cellar/gstreamer* 2>/dev/null || true
+      - name: Debug GStreamer archive (Android)
+        if: matrix.name == 'Android'
+        run: |
+          echo "=== Listing downloaded GStreamer cache ==="
+          ls -lh $HOME/.cache/gstreamer || true
+          echo "=== Checking for GStreamer tarballs ==="
+          file $HOME/.cache/gstreamer/* || true
+      - name: Debug GStreamer archive (iOS)
+        if: matrix.name == 'iOS'
+        run: |
+          echo "=== Listing downloaded iOS GStreamer cache ==="
+          ls -lh $HOME/.cache/gstreamer || true
+          echo "=== File type check ==="
+          file $HOME/.cache/gstreamer/* || true
+
+
+
 
       - name: Build ${{ matrix.name }}
         run: ${{ matrix.build_script }}
