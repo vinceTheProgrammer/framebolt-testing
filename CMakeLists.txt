@@ -37,7 +37,7 @@ else()
 
     if(WIN32)
         # Default install path from GitHub Actions workflow
-        set(GSTREAMER_ROOT "C:/gstreamer/1.0/x86_64")
+        set(GSTREAMER_ROOT "C:/gstreamer/1.0/msvc_x86_64")
     elseif(APPLE)
         # macOS and iOS GStreamer SDKs install into /Library/Frameworks or local path
         set(GSTREAMER_ROOT "/Library/Frameworks/GStreamer.framework/Versions/Current")
