@@ -61,6 +61,8 @@ else()
     # Include and link paths
     set(GSTREAMER_INCLUDE_DIRS
         "${GSTREAMER_ROOT}/include/gstreamer-1.0"
+        "${GSTREAMER_ROOT}/include/glib-2.0"
+        "${GSTREAMER_ROOT}/lib/glib-2.0/include"
         "${GSTREAMER_ROOT}/lib/gstreamer-1.0/include"
     )
     if(WIN32)
