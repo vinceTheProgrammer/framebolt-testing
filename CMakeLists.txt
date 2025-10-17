@@ -52,6 +52,8 @@ else()
     elseif(ANDROID)
         # Assume pre-extracted GStreamer NDK-style bundle inside android-project
         set(GSTREAMER_ROOT "${CMAKE_SOURCE_DIR}/android-project/app/src/main/jni/gstreamer")
+        include_directories("${GSTREAMER_ROOT}/include")
+        link_directories("${CMAKE_SOURCE_DIR}/android-project/app/src/main/jniLibs/${ANDROID_ABI}")
     else()
         message(FATAL_ERROR "Bundled GStreamer mode not supported on this platform.")
     endif()
@@ -80,8 +82,10 @@ else()
     endif()
 endif()
 
-include_directories(${GSTREAMER_INCLUDE_DIRS})
-link_directories(${GSTREAMER_LIBRARY_DIRS})
+if(NOT ANDROID)
+    include_directories(${GSTREAMER_INCLUDE_DIRS})
+    link_directories(${GSTREAMER_LIBRARY_DIRS})
+endif()
 
 # -----------------------------------------------------------
 # Target setup
