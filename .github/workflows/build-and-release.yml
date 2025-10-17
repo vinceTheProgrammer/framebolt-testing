@@ -14,7 +14,6 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
-      # TO DO LATER: Remove fail fast false once everything is working
       fail-fast: false
       matrix:
         include:
@@ -31,11 +30,10 @@ jobs:
           # --- DESKTOP: Windows ---
           - name: Desktop (Windows)
             os: windows-latest
-            gst_cache_key: gstreamer-windows-1.26.7
             gst_dev_url: "https://gstreamer.freedesktop.org/data/pkg/windows/1.26.7/msvc/gstreamer-1.0-devel-msvc-x86_64-1.26.7.msi"
             build_script: |
               cmake -S . -B build -DCMAKE_PREFIX_PATH="C:\\gstreamer\\1.0\\x86_64" || exit 0
-              cmake --build build --config Release  || exit 0
+              cmake --build build --config Release || exit 0
               if (Test-Path build\Release\*.exe) {
                 powershell Compress-Archive -Path build\Release\*.exe -DestinationPath framebolt-windows.zip
               } else {
@@ -47,7 +45,6 @@ jobs:
           # --- DESKTOP: macOS ---
           - name: Desktop (macOS)
             os: macos-latest
-            gst_cache_key: gstreamer-macos-1.26.7
             gst_pkg_url: "https://gstreamer.freedesktop.org/data/pkg/osx/1.26.7/gstreamer-1.0-devel-1.26.7-universal.pkg"
             build_script: |
               cmake -S . -B build-macos -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" || exit 0
@@ -61,11 +58,11 @@ jobs:
           # --- MOBILE: Android ---
           - name: Android
             os: ubuntu-latest
-            gst_cache_key: gstreamer-android-1.26.7
             gst_android_url: "https://gstreamer.freedesktop.org/data/pkg/android/1.26.7/gstreamer-1.0-android-universal-1.26.7.tar.xz"
             build_script: |
               mkdir -p android-project/app/src/main/jni/
-              tar -xf $HOME/.cache/gstreamer/gstreamer-android.tar.xz || (echo "⚠️ Extraction failed, printing tar list"; ls -lh $HOME/.cache/gstreamer && exit 0)
+              curl -L "${{ matrix.gst_android_url }}" -o gstreamer-android.tar.xz
+              tar -xf gstreamer-android.tar.xz
               mv gstreamer-1.0-android-universal-* android-project/app/src/main/jni/gstreamer || true
               cd android-project
               ./gradlew assembleRelease
@@ -77,10 +74,10 @@ jobs:
           # --- MOBILE: iOS ---
           - name: iOS
             os: macos-latest
-            gst_cache_key: gstreamer-ios-1.26.7
             gst_ios_url: "https://gstreamer.freedesktop.org/data/pkg/ios/1.26.7/gstreamer-1.0-ios-universal-1.26.7.tar.xz"
             build_script: |
-              tar -xf $HOME/.cache/gstreamer/gstreamer-ios.tar.xz || (echo "⚠️ Extraction failed, printing archive info"; ls -lh $HOME/.cache/gstreamer && exit 0)
+              curl -L "${{ matrix.gst_ios_url }}" -o gstreamer-ios.tar.xz
+              tar -xf gstreamer-ios.tar.xz
               GST_IOS_DIR=$(find . -type d -name "gstreamer-1.0-ios-universal-*")
               cmake -S . -B build-ios -G Xcode \
                 -DCMAKE_SYSTEM_NAME=iOS \
@@ -97,28 +94,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- Cache SDL sources (saves ~5 min each run) ---
-      - name: Cache SDL sources
-        uses: actions/cache@v4
-        with:
-          path: vendored
-          key: sdl-vendored-${{ runner.os }}-${{ hashFiles('CMakeLists.txt') }}
-
+      # --- SDL Dependencies (no cache) ---
       - name: Set up SDL dependencies
         shell: bash
         if: runner.os != 'Windows'
         run: |
           mkdir -p vendored
-          git clone https://github.com/libsdl-org/SDL.git vendored/SDL || true
-          git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf || true
+          git clone https://github.com/libsdl-org/SDL.git vendored/SDL
+          git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf
           cd vendored/SDL_ttf && ./external/download.sh && cd ../..
 
       - name: Set up SDL dependencies (Windows)
         if: runner.os == 'Windows'
         run: |
           if (!(Test-Path "vendored")) { New-Item -ItemType Directory -Path "vendored" | Out-Null }
-          if (!(Test-Path "vendored/SDL")) { git clone https://github.com/libsdl-org/SDL.git vendored/SDL }
-          if (!(Test-Path "vendored/SDL_ttf")) { git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf }
+          git clone https://github.com/libsdl-org/SDL.git vendored/SDL
+          git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf
           cd vendored/SDL_ttf
           powershell ./external/Get-GitModules.ps1
           cd ../..
@@ -135,78 +126,24 @@ jobs:
             libdrm-dev libgbm-dev libasound2-dev libpulse-dev libudev-dev libdbus-1-dev \
             libibus-1.0-dev fcitx-libs-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
-      # --- Cache and setup GStreamer ---
-      - name: Cache GStreamer SDK
-        if: ${{ !matrix.use_system_gst }}
-        uses: actions/cache@v4
-        with:
-          path: $HOME/.cache/gstreamer
-          key: ${{ matrix.gst_cache_key }}
-
+      # --- GStreamer SDK Setup (no cache) ---
       - name: Download GStreamer SDK (Windows)
         if: runner.os == 'Windows' && !matrix.use_system_gst
         run: |
-          mkdir -p $env:USERPROFILE\.cache\gstreamer
-          if (!(Test-Path "$env:USERPROFILE\.cache\gstreamer\gstreamer-devel.msi")) {
-            Invoke-WebRequest -Uri ${{ matrix.gst_dev_url }} -OutFile "$env:USERPROFILE\.cache\gstreamer\gstreamer-devel.msi"
-          }
-          msiexec /i "$env:USERPROFILE\.cache\gstreamer\gstreamer-devel.msi" /qn TARGETDIR="C:\\gstreamer"
+          Invoke-WebRequest -Uri ${{ matrix.gst_dev_url }} -OutFile "gstreamer-devel.msi"
+          msiexec /i "gstreamer-devel.msi" /qn TARGETDIR="C:\\gstreamer"
 
       - name: Download GStreamer SDK (macOS/iOS/Android)
         if: runner.os != 'Windows' && !matrix.use_system_gst
         run: |
-          mkdir -p $HOME/.cache/gstreamer
-
-          # Normalize name to lowercase for file naming
-          NAME_LOWER=$(echo "${{ matrix.name }}" | tr '[:upper:]' '[:lower:]')
-
-          if [ ! -f "$HOME/.cache/gstreamer/gstreamer-${NAME_LOWER}.tar.xz" ]; then
-            if [ "${{ matrix.gst_pkg_url }}" != "" ]; then
-              echo "Downloading GStreamer macOS SDK..."
-              curl -L "${{ matrix.gst_pkg_url }}" -o "$HOME/.cache/gstreamer/gstreamer-macos.pkg"
-              sudo installer -pkg "$HOME/.cache/gstreamer/gstreamer-macos.pkg" -target /
-            elif [ "${{ matrix.gst_android_url }}" != "" ]; then
-              echo "Downloading GStreamer Android SDK..."
-              curl -L "${{ matrix.gst_android_url }}" -o "$HOME/.cache/gstreamer/gstreamer-android.tar.xz"
-            elif [ "${{ matrix.gst_ios_url }}" != "" ]; then
-              echo "Downloading GStreamer iOS SDK..."
-              curl -L "${{ matrix.gst_ios_url }}" -o "$HOME/.cache/gstreamer/gstreamer-ios.tar.xz"
-            fi
+          if [ "${{ matrix.gst_pkg_url }}" != "" ]; then
+            curl -L "${{ matrix.gst_pkg_url }}" -o gstreamer.pkg
+            sudo installer -pkg gstreamer.pkg -target /
+          elif [ "${{ matrix.gst_android_url }}" != "" ]; then
+            curl -L "${{ matrix.gst_android_url }}" -o gstreamer-android.tar.xz
+          elif [ "${{ matrix.gst_ios_url }}" != "" ]; then
+            curl -L "${{ matrix.gst_ios_url }}" -o gstreamer-ios.tar.xz
           fi
-
-      - name: Debug GStreamer path (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          echo "=== Checking GStreamer locations ==="
-          Get-ChildItem -Recurse C:\gstreamer\1.0\ | Select-Object FullName
-          echo "=== Environment Variables ==="
-          Get-ChildItem Env:
-
-      - name: Debug GStreamer path (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          echo "=== Checking for installed GStreamer frameworks ==="
-          ls -R /Library/Frameworks || true
-          echo "=== Checking GStreamer in /usr/local and /opt/homebrew ==="
-          ls -R /usr/local/Cellar/gstreamer* 2>/dev/null || true
-          ls -R /opt/homebrew/Cellar/gstreamer* 2>/dev/null || true
-
-      - name: Debug GStreamer archive (Android)
-        if: matrix.name == 'Android'
-        run: |
-          echo "=== Listing downloaded GStreamer cache ==="
-          ls -lh $HOME/.cache/gstreamer || true
-          echo "=== Checking for GStreamer tarballs ==="
-          file $HOME/.cache/gstreamer/* || true
-
-      - name: Debug GStreamer archive (iOS)
-        if: matrix.name == 'iOS'
-        run: |
-          echo "=== Listing downloaded iOS GStreamer cache ==="
-          ls -lh $HOME/.cache/gstreamer || true
-          echo "=== File type check ==="
-          file $HOME/.cache/gstreamer/* || true
-
 
       # --- Build ---
       - name: Build ${{ matrix.name }}
