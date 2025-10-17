@@ -139,7 +139,7 @@ jobs:
           cd ../..
           echo "Installing GStreamer..."
           curl -L ${{ matrix.gst_dev_url }} -o gstreamer-devel.msi
-          $args = '/i', 'gstreamer-devel.msi', '/qn', 'TARGETDIR=C:\gstreamer', '/L*v', 'C:\install.log'
+          $args = '/i', 'gstreamer-devel.msi', '/qn', 'INSTALLDIR=C:\gstreamer', '/L*v', 'C:\install.log'
           $process = Start-Process msiexec -ArgumentList $args -Wait -PassThru
           if ($process.ExitCode -ne 0) {
             Write-Host "❌ GStreamer install failed with exit code $($process.ExitCode)"
