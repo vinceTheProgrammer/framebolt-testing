@@ -3,3 +3,5 @@ vendored
 build-android
 .gradle
 .cxx
+.vscode
+.cache

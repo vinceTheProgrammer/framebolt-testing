@@ -5,13 +5,26 @@ project(framebolt)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
+# Use vendored libs
+set(SDLTTF_VENDORED ON)
+
 if(NOT ANDROID)
-    set(SDL_SHARED OFF CACHE BOOL "Build shared SDL library" FORCE)
-    set(SDL_STATIC ON CACHE BOOL "Build static SDL library" FORCE)
+    set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
+    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    set(SDL_STATIC ON CACHE BOOL "" FORCE)
 endif()
 
 # Add SDL subdirectory
 add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
+# Add SDL ttf subdirectory
+add_subdirectory(vendored/SDL_ttf EXCLUDE_FROM_ALL)
+
+# --- GStreamer ---
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0>=1.18)
+
+include_directories(${GSTREAMER_INCLUDE_DIRS})
+link_directories(${GSTREAMER_LIBRARY_DIRS})
 
 # Define the main target
 if(IOS)
@@ -23,7 +36,12 @@ else()
 endif()
 
 # Link to SDL3
-target_link_libraries(framebolt PRIVATE SDL3::SDL3)
+target_link_libraries(framebolt 
+    PRIVATE 
+        SDL3_ttf::SDL3_ttf
+        SDL3::SDL3
+        ${GSTREAMER_LIBRARIES}
+)
 
 # iOS-specific bundle properties
 if(IOS)

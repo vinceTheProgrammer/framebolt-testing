@@ -1,10 +1,14 @@
 # Framebolt
 
-## Prepare To Build (for all cases below)
+## Prepare To Build (for all platforms)
 ```
 git clone https://github.com/vinceTheProgrammer/framebolt-testing
 cd framebolt-testing
 git clone https://github.com/libsdl-org/SDL.git vendored/SDL
+git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf
+cd vendored/SDL_ttf
+./external/download.sh
+cd ../..
 ```
 
 ## Build Desktop
