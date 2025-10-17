@@ -129,6 +129,8 @@ jobs:
           curl -L ${{ matrix.gst_dev_url }} -o gstreamer-devel.msi
           msiexec /i gstreamer-devel.msi /qn TARGETDIR="C:\\gstreamer"
 
+      - name: Download GStreamer ${{ matrix.name }}
+        run: ${{ matrix.download_script }}
 
 
 
@@ -163,8 +165,7 @@ jobs:
           file $HOME/.cache/gstreamer/* || true
 
 
-      - name: Download GStreamer ${{ matrix.name }}
-        run: ${{ matrix.download_script }}
+ 
 
       - name: Build ${{ matrix.name }}
         run: ${{ matrix.build_script }}
