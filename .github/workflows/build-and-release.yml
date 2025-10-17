@@ -102,7 +102,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: vendored
-          key: sdl-vendored-${{ runner.os }}
+          key: sdl-vendored-${{ runner.os }}-${{ hashFiles('CMakeLists.txt') }}
 
       - name: Set up SDL dependencies
         shell: bash
