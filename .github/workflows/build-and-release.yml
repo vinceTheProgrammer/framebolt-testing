@@ -159,6 +159,14 @@ jobs:
         run: |
           Write-Host "Contents of C:\"
           Get-ChildItem C:\ | Select-Object Name, LastWriteTime
+          Write-Host "Contents of C:\gstreamer"
+          Get-ChildItem C:\gstreamer | Select-Object Name, LastWriteTime
+          Write-Host "Contents of C:\gstreamer\VC"
+          Get-ChildItem C:\gstreamer\VC | Select-Object Name, LastWriteTime
+          Write-Host "Contents of C:\gstreamer\1.0"
+          Get-ChildItem C:\gstreamer\1.0 | Select-Object Name, LastWriteTime
+          Write-Host "Contents of C:\gstreamer\1.0\msvc_x86_64"
+          Get-ChildItem C:\gstreamer\1.0\msvc_x86_64 | Select-Object Name, LastWriteTime
       - name: Debug GStreamer path (macOS)
         if: runner.os == 'macOS'
         run: |
