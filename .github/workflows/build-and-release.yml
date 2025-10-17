@@ -35,7 +35,7 @@ jobs:
             download_script: |
               echo "hi"
             build_script: |
-              cmake -S . -B build -DCMAKE_PREFIX_PATH="C:\\gstreamer\\1.0\\x86_64"
+              cmake -S . -B build -DCMAKE_PREFIX_PATH="C:\\gstreamer\\1.0\\msvc_x86_64"
               cmake --build build --config Release
               powershell Compress-Archive -Path build\\Release\\*.exe -DestinationPath framebolt-windows.zip
             artifact: framebolt-windows.zip
