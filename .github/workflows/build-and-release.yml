@@ -20,6 +20,8 @@ jobs:
           # --- DESKTOP: Linux ---
           - name: Desktop (Linux)
             os: ubuntu-latest
+            download_script: |
+              echo "hi"
             build_script: |
               cmake -S . -B build -DUSE_SYSTEM_GSTREAMER=ON
               cmake --build build --config Release
@@ -30,6 +32,8 @@ jobs:
           - name: Desktop (Windows)
             os: windows-latest
             gst_dev_url: "https://gstreamer.freedesktop.org/data/pkg/windows/1.26.7/msvc/gstreamer-1.0-devel-msvc-x86_64-1.26.7.msi"
+            download_script: |
+              echo "hi"
             build_script: |
               cmake -S . -B build -DCMAKE_PREFIX_PATH="C:\\gstreamer\\1.0\\x86_64"
               cmake --build build --config Release
@@ -40,6 +44,8 @@ jobs:
           - name: Desktop (macOS)
             os: macos-latest
             gst_pkg_url: "https://gstreamer.freedesktop.org/data/pkg/osx/1.26.7/gstreamer-1.0-devel-1.26.7-universal.pkg"
+            download_script: |
+              echo "hi"
             build_script: |
               cmake -S . -B build-macos -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
               cmake --build build-macos --config Release
@@ -52,12 +58,13 @@ jobs:
           # --- MOBILE: Android ---
           - name: Android
             os: ubuntu-latest
-            build_script: |
+            download_script: |
               GST_ANDROID_URL="https://gstreamer.freedesktop.org/data/pkg/android/1.26.7/gstreamer-1.0-android-universal-1.26.7.tar.xz"
               mkdir -p android-project/app/src/main/jni/
               echo "Downloading $GST_ANDROID_URL..."
               curl -L "$GST_ANDROID_URL" -o gstreamer-android.tar.xz
               tar -xf gstreamer-android.tar.xz
+            build_script: |
               mv gstreamer-1.0-android-universal-* android-project/app/src/main/jni/gstreamer
               cd android-project
               ./gradlew assembleRelease
@@ -70,11 +77,12 @@ jobs:
           # --- MOBILE: iOS ---
           - name: iOS
             os: macos-latest
-            build_script: |
+            download_script: |
               GST_IOS_URL="https://gstreamer.freedesktop.org/data/pkg/ios/1.26.7/gstreamer-1.0-ios-universal-1.26.7.tar.xz"
               echo "Downloading $GST_IOS_URL..."
               curl -L "$GST_IOS_URL" -o gstreamer-ios.tar.xz
               tar -xf gstreamer-ios.tar.xz
+            build_script: |
               GST_IOS_DIR=$(find . -type d -name "gstreamer-1.0-ios-universal-*")
               cmake -S . -B build-ios -G Xcode \
                 -DCMAKE_SYSTEM_NAME=iOS \
@@ -155,7 +163,8 @@ jobs:
           file $HOME/.cache/gstreamer/* || true
 
 
-
+      - name: Download GStreamer ${{ matrix.name }}
+        run: ${{ matrix.download_script }}
 
       - name: Build ${{ matrix.name }}
         run: ${{ matrix.build_script }}
