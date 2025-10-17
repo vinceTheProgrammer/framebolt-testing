@@ -179,8 +179,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Write-Host "Contents of C:\gstreamer\VC"
-          Get-ChildItem C:\gstreamer\VC | Select-Object Name, LastWriteTime
+          Write-Host "Contents of C:\gstreamer\1.0"
+          Get-ChildItem C:\gstreamer\1.0 | Select-Object Name, LastWriteTime
 
       - name: Debug GStreamer path (macOS)
         if: runner.os == 'macOS'
