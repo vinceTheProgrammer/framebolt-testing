@@ -9,7 +9,7 @@ $dumpbin = (Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Recurse -F
              Select-Object -First 1).FullName
 
 if (-not $dumpbin) {
-    Write-Error "dumpbin.exe not found. Make sure Visual Studio Build Tools are installed."
+    Write-Error "❌ dumpbin.exe not found. Make sure Visual Studio Build Tools are installed."
     exit 1
 }
 
@@ -25,6 +25,7 @@ function Get-Dependencies($file) {
 $processed = @{}
 $queue = New-Object System.Collections.Queue
 $queue.Enqueue($exePath)
+$copiedCount = 0
 
 while ($queue.Count -gt 0) {
     $current = $queue.Dequeue()
@@ -40,14 +41,23 @@ while ($queue.Count -gt 0) {
         $src = Join-Path $gstBin $dll
         $dst = Join-Path $outDir $dll
 
-        if (Test-Path $src -and -not (Test-Path $dst)) {
+        if ((Test-Path $src) -and (-not (Test-Path $dst))) {
             Copy-Item $src -Destination $outDir -Force
             Write-Host "Copied: $dll"
+            $copiedCount++
             # Queue this DLL for deeper dependency inspection
             $queue.Enqueue($dst)
         }
     }
 }
 
+# === Final sanity check ===
+if ($copiedCount -eq 0) {
+    Write-Error "❌ No GStreamer DLLs were copied! Check if GStreamer is installed in $gstBin"
+    exit 1
+}
+
 Write-Host "`n✅ Recursive GStreamer dependency copy complete."
-Write-Host "DLLs copied to: $outDir"
+Write-Host "📦 $copiedCount DLLs copied to: $out
+Dir"
+exit 0
