@@ -6,5 +6,4 @@ build-android
 .vscode
 .cache
 ttf_bundle_later
-DejaVuSans.ttf
 arm64
