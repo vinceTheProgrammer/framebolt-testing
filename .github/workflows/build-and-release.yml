@@ -214,18 +214,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $exePath = "build\Release\framebolt.exe"
-          $gstBin = "C:\gstreamer\1.0\msvc_x86_64\bin"
-          $outDir = "build\Release"
-          $dumpbin = (Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter dumpbin.exe | Select-Object -First 1).FullName
-          $deps = & $dumpbin /DEPENDENTS $exePath 2>$null |
-                  Select-String -Pattern "\.dll" |
-                  ForEach-Object { ($_ -split '\s+')[-1].Trim() } |
-                  Sort-Object -Unique
-          foreach ($dll in $deps) {
-              $src = Join-Path $gstBin $dll
-              if (Test-Path $src) { Copy-Item $src -Destination $outDir -Force }
-          }
+          ./find_dlls_recursive.ps1
 
       - name: Copy font (Windows)
         if: runner.os == 'Windows'
