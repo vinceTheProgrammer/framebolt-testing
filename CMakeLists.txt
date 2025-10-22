@@ -32,6 +32,10 @@ endif()
 #-----------------------------------------------------------
 set(SDLTTF_VENDORED ON)
 
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
+set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+set(SDL_STATIC ON CACHE BOOL "" FORCE)
+
 # Use vendored builds for SDL3 and SDL_ttf
 add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(vendored/SDL_ttf EXCLUDE_FROM_ALL)
