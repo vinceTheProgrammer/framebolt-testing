@@ -57,21 +57,17 @@ if(USE_SYSTEM_GSTREAMER)
     pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0>=${GSTREAMER_MIN_VERSION})
     set(GSTREAMER_INCLUDE_DIRS ${GSTREAMER_INCLUDE_DIRS} ${GSTREAMER_INCLUDE_DIRS})
     set(GSTREAMER_LIBRARIES ${GSTREAMER_LIBRARIES})
+    include_directories(${GSTREAMER_INCLUDE_DIRS})
+    link_directories(${GSTREAMER_LIBRARY_DIRS})
 else()
     message(STATUS "Using bundled GStreamer SDK")
 
-    # Auto-detect GStreamer root
     if(PLATFORM_WINDOWS)
         set(GSTREAMER_ROOT "C:/gstreamer/1.0/msvc_x86_64")
+        set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
     elseif(PLATFORM_MAC)
         set(GSTREAMER_ROOT "/Library/Frameworks/GStreamer.framework/Versions/Current")
-        if(NOT EXISTS "${GSTREAMER_ROOT}" AND EXISTS "${CMAKE_SOURCE_DIR}/gstreamer")
-            set(GSTREAMER_ROOT "${CMAKE_SOURCE_DIR}/gstreamer")
-        endif()
-    elseif(PLATFORM_IOS)
-        set(GSTREAMER_ROOT "${CMAKE_SOURCE_DIR}/gstreamer-ios")
-    elseif(PLATFORM_ANDROID)
-        set(GSTREAMER_ROOT "${CMAKE_SOURCE_DIR}/android-project/app/src/main/jni/gstreamer")
+        set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
     endif()
 
     set(GSTREAMER_INCLUDE_DIRS
@@ -79,16 +75,22 @@ else()
         "${GSTREAMER_ROOT}/include/glib-2.0"
         "${GSTREAMER_ROOT}/lib/glib-2.0/include"
     )
+    include_directories(${GSTREAMER_INCLUDE_DIRS})
+    link_directories(${GSTREAMER_LIBRARY_DIRS})
 
-    if(PLATFORM_WINDOWS OR PLATFORM_MAC)
-        set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
-    elseif(PLATFORM_ANDROID)
-        set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/arm64/lib")
-    endif()
+    # Explicitly find the core GStreamer and GLib libs
+    find_library(GSTREAMER_CORE_LIB gstreamer-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+    find_library(GST_BASE_LIB gstbase-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+    find_library(GLIB_LIB glib-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+    find_library(GOBJECT_LIB gobject-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+
+    set(GSTREAMER_LIBRARIES
+        ${GSTREAMER_CORE_LIB}
+        ${GST_BASE_LIB}
+        ${GOBJECT_LIB}
+        ${GLIB_LIB}
+    )
 endif()
-
-include_directories(${GSTREAMER_INCLUDE_DIRS})
-link_directories(${GSTREAMER_LIBRARY_DIRS})
 
 #-----------------------------------------------------------
 # WebAssembly Micro Runtime (WAMR)
