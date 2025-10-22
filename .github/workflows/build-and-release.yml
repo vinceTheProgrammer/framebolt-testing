@@ -112,7 +112,7 @@ jobs:
           git clone https://gitlab.freedesktop.org/gstreamer/cerbero.git
           cd cerbero
           # Optional: Checkout specific GStreamer branch or tag
-          # git checkout 1.24
+          git checkout 1.26
 
       # 4. Bootstrap Cerbero for Android Universal
       - name: Bootstrap Cerbero for Android Universal
