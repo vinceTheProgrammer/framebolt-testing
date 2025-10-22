@@ -5,10 +5,12 @@ FRAMEWORKS_DIR="$APP_PATH/Contents/Frameworks"
 mkdir -p "$FRAMEWORKS_DIR"
 
 # Copy core GStreamer dylibs you depend on
-cp -a "$GST_PREFIX/lib/libgstreamer-1.0.dylib" "$FRAMEWORKS_DIR/"
-cp -a "$GST_PREFIX/lib/libgstbase-1.0.dylib" "$FRAMEWORKS_DIR/"
-cp -a "$GST_PREFIX/lib/libgobject-2.0.dylib" "$FRAMEWORKS_DIR/"
-cp -a "$GST_PREFIX/lib/libglib-2.0.dylib" "$FRAMEWORKS_DIR/"
+cp -a "$GST_PREFIX/lib/libgstreamer-1.0.dylib" "$FRAMEWORKS_DIR/libgstreamer-1.0.0.dylib"
+cp -a "$GST_PREFIX/lib/libgstbase-1.0.dylib" "$FRAMEWORKS_DIR/libgstbase-1.0.0.dylib"
+cp -a "$GST_PREFIX/lib/libgobject-2.0.dylib" "$FRAMEWORKS_DIR/libgobject-2.0.0.dylib"
+cp -a "$GST_PREFIX/lib/libglib-2.0.dylib" "$FRAMEWORKS_DIR/libglib-2.0.0.dylib"
+cp -a "$GST_PREFIX/lib/libintl.8.dylib" "$FRAMEWORKS_DIR/"
+
 # add others your app links against (see `otool -L`)
 
 # Copy the plugin directory
