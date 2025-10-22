@@ -230,7 +230,10 @@ jobs:
           echo "=== File type check ==="
           file * || true
 
-
+      - name: debug mac app name
+        if: runner.os == 'macOS'
+        run: |
+          ls build
 
 
       - name: Build ${{ matrix.name }}
@@ -253,11 +256,6 @@ jobs:
         run: |
           $outDir = "build\Release"
           Copy-Item "DejaVuSans.ttf" -Destination $outDir -Force
-
-      - name: debug mac app name
-        if: runner.os == 'macOS'
-        run: |
-          ls build
 
       - name: Copy font into app bundle (macOS)
         if: runner.os == 'macOS'
