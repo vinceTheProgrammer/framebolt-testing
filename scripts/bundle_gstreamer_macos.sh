@@ -10,17 +10,26 @@ APP_BIN="$APP_PATH/Contents/MacOS/framebolt"
 
 mkdir -p "$FRAMEWORKS_DIR" "$PLUGIN_DEST"
 
-declare -A COPIED_LIBS
+COPIED_LIBS_FILE="$(mktemp)"
 
-# --- Function: recursively copy a dylib and its dependencies ---
+# --- Function: check if dylib already copied ---
+has_copied() {
+  grep -Fxq "$1" "$COPIED_LIBS_FILE" 2>/dev/null
+}
+
+# --- Function: mark dylib as copied ---
+mark_copied() {
+  echo "$1" >> "$COPIED_LIBS_FILE"
+}
+
+# --- Function: recursively copy dylibs ---
 copy_dylib_recursive() {
   local dylib_path="$1"
 
-  # Skip if already copied
-  if [[ -n "${COPIED_LIBS["$dylib_path"]+x}" ]]; then
+  if has_copied "$dylib_path"; then
     return
   fi
-  COPIED_LIBS["$dylib_path"]=1
+  mark_copied "$dylib_path"
 
   local dylib_name
   dylib_name=$(basename "$dylib_path")
@@ -28,10 +37,8 @@ copy_dylib_recursive() {
   echo "→ Copying $dylib_name"
   cp -a "$dylib_path" "$FRAMEWORKS_DIR/$dylib_name"
 
-  # Update its install name
   install_name_tool -id "@rpath/$dylib_name" "$FRAMEWORKS_DIR/$dylib_name"
 
-  # Inspect and relink dependencies
   otool -L "$dylib_path" | awk 'NR>1 {print $1}' | while read -r dep; do
     if [[ "$dep" == "$GST_PREFIX/lib/"*".dylib" ]]; then
       dep_basename=$(basename "$dep")
@@ -43,7 +50,6 @@ copy_dylib_recursive() {
   done
 }
 
-# --- Scan main binary dependencies ---
 echo "🔍 Scanning app binary dependencies..."
 otool -L "$APP_BIN" | awk 'NR>1 {print $1}' | while read -r dep; do
   if [[ "$dep" == "$GST_PREFIX/lib/"*".dylib" ]]; then
@@ -56,11 +62,9 @@ done
 echo "📦 Adding RPATH to app binary..."
 install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP_BIN"
 
-# --- Copy GStreamer plugins (excluding .a and .pc files) ---
-echo "🧩 Copying GStreamer plugins..."
+echo "🧩 Copying GStreamer plugins (filtering .a and .pc)..."
 rsync -a --exclude='*.a' --exclude='*.pc' "$PLUGIN_SRC/" "$PLUGIN_DEST/"
 
-# --- Relink plugin dependencies to @rpath paths ---
 echo "🔗 Relinking plugin dependencies..."
 find "$PLUGIN_DEST" -type f -perm +111 -name "*.so" | while read -r plugin; do
   echo "→ Relinking $(basename "$plugin")"
@@ -75,7 +79,9 @@ find "$PLUGIN_DEST" -type f -perm +111 -name "*.so" | while read -r plugin; do
   done
 done
 
+COPIED_COUNT=$(wc -l < "$COPIED_LIBS_FILE")
+rm -f "$COPIED_LIBS_FILE"
+
 echo "✅ Done!"
-echo "   → Copied ${#COPIED_LIBS[@]} GStreamer dylibs to $FRAMEWORKS_DIR"
-echo "   → Plugins copied and relinked to use @rpath"
-echo "   → Your app should now run standalone 🎉"
+echo "   → Copied $COPIED_COUNT GStreamer dylibs to $FRAMEWORKS_DIR"
+echo "   → Plugins copied and relinked successfully"
