@@ -25,7 +25,8 @@ jobs:
             build_script: |
               cmake -S . -B build -DUSE_SYSTEM_GSTREAMER=ON
               cmake --build build --config Release
-              zip -j framebolt-linux.zip build/framebolt
+              cp "DejaVuSans.ttf" build
+              zip -j framebolt-linux.zip build/framebolt build/DejaVuSans.ttf
             artifact: framebolt-linux.zip
 
           # --- DESKTOP: Windows ---
@@ -230,14 +231,14 @@ jobs:
           echo "=== File type check ==="
           file * || true
 
+
+      - name: Build ${{ matrix.name }}
+        run: ${{ matrix.build_script }}
+
       - name: debug mac app name
         if: runner.os == 'macOS'
         run: |
           ls build
-
-
-      - name: Build ${{ matrix.name }}
-        run: ${{ matrix.build_script }}
 
       - name: Copy only required GStreamer DLLs
         if: runner.os == 'Windows'
@@ -264,13 +265,6 @@ jobs:
           RES_DIR="$APP_PATH/Contents/Resources"
           mkdir -p "$RES_DIR"
           cp "DejaVuSans.ttf" "$RES_DIR/"
-
-      - name: Copy font into app bundle (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          APP_PATH="build"
-          cp "DejaVuSans.ttf" "$APP_PATH/"
-
 
       - name: Compress archive (Windows)
         if: runner.os == 'Windows'
