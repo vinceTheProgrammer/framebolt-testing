@@ -240,7 +240,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          ./find_dlls_recursive.ps1
+          ./scripts/copy_dlls_recursive.ps1
 
       - name: Fix and bundle GStreamer dylibs
         if: runner.os == 'macOS'
@@ -254,10 +254,15 @@ jobs:
           $outDir = "build\Release"
           Copy-Item "DejaVuSans.ttf" -Destination $outDir -Force
 
+      - name: debug mac app name
+        if: runner.os == 'macOS'
+        run: |
+          ls build
+
       - name: Copy font into app bundle (macOS)
         if: runner.os == 'macOS'
         run: |
-          APP_PATH="build/MyApp.app"
+          APP_PATH="build/Framebolt.app"
           RES_DIR="$APP_PATH/Contents/Resources"
           mkdir -p "$RES_DIR"
           cp "DejaVuSans.ttf" "$RES_DIR/"
