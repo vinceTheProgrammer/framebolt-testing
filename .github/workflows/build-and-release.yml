@@ -95,6 +95,8 @@ jobs:
               echo "Downloading $GST_IOS_URL..."
               curl -L "$GST_IOS_URL" -o gstreamer-ios.tar.xz
               tar -xf gstreamer-ios.tar.xz
+            gst_pkg_devel_url: "https://gstreamer.freedesktop.org/data/pkg/osx/1.26.7/gstreamer-1.0-devel-1.26.7-universal.pkg"
+            gst_pkg_runtime_url: "https://gstreamer.freedesktop.org/data/pkg/osx/1.26.7/gstreamer-1.0-1.26.7-universal.pkg"
             build_script: |
               GST_IOS_DIR=$(find . -type d -name "gstreamer-1.0-ios-universal-*")
               cmake -S . -B build-ios -G Xcode \
@@ -240,12 +242,32 @@ jobs:
         run: |
           ./find_dlls_recursive.ps1
 
+      - name: Fix and bundle GStreamer dylibs
+        if: runner.os == 'macOS'
+        run: |
+          bash scripts/bundle_gstreamer_macos.sh
+
       - name: Copy font (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $outDir = "build\Release"
           Copy-Item "DejaVuSans.ttf" -Destination $outDir -Force
+
+      - name: Copy font into app bundle (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          APP_PATH="build/MyApp.app"
+          RES_DIR="$APP_PATH/Contents/Resources"
+          mkdir -p "$RES_DIR"
+          cp "DejaVuSans.ttf" "$RES_DIR/"
+
+      - name: Copy font into app bundle (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          APP_PATH="build"
+          cp "DejaVuSans.ttf" "$APP_PATH/"
+
 
       - name: Compress archive (Windows)
         if: runner.os == 'Windows'
