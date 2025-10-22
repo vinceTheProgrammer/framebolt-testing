@@ -9,6 +9,7 @@ git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf
 cd vendored/SDL_ttf
 ./external/download.sh
 cd ../..
+git clone https://github.com/bytecodealliance/wasm-micro-runtime.git external/wamr
 ```
 
 ## Build Desktop

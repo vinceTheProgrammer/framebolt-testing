@@ -89,10 +89,36 @@ link_directories(${GSTREAMER_LIBRARY_DIRS})
 #-----------------------------------------------------------
 # WebAssembly Micro Runtime (WAMR)
 #-----------------------------------------------------------
-set(WAMR_DIR "${CMAKE_SOURCE_DIR}/external/wamr")
-add_subdirectory(${WAMR_DIR} ${CMAKE_BINARY_DIR}/wamr_build)
-# assumes WAMR exports a `wamr` target
-message(STATUS "Static linking WAMR (always)")
+set(WAMR_ROOT_DIR "${CMAKE_SOURCE_DIR}/external/wamr")
+
+# Configure WAMR build features
+# You can adjust these per-platform as needed
+if(PLATFORM_LINUX)
+    set(WAMR_BUILD_PLATFORM "linux")
+elseif(PLATFORM_WINDOWS)
+    set(WAMR_BUILD_PLATFORM "windows")
+elseif(PLATFORM_MAC)
+    set(WAMR_BUILD_PLATFORM "darwin")
+elseif(PLATFORM_ANDROID)
+    set(WAMR_BUILD_PLATFORM "android")
+elseif(PLATFORM_IOS)
+    set(WAMR_BUILD_PLATFORM "darwin") # iOS uses Darwin platform too
+endif()
+
+set(WAMR_BUILD_TARGET "X86_64")        # or "AARCH64" on ARM64 devices
+set(WAMR_BUILD_INTERP 1)
+set(WAMR_BUILD_FAST_INTERP 1)
+set(WAMR_BUILD_AOT 1)
+set(WAMR_BUILD_LIBC_BUILTIN 1)
+set(WAMR_BUILD_LIBC_WASI 1)
+set(WAMR_BUILD_SIMD 1)
+
+# Include WAMR build script
+include(${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
+
+# Define the static library target for WAMR
+add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE})
+target_include_directories(vmlib PUBLIC ${WAMR_RUNTIME_LIB_INCLUDE_DIRS})
 
 #-----------------------------------------------------------
 # Target setup
@@ -132,8 +158,8 @@ else()
     target_link_libraries(framebolt PRIVATE ${GSTREAMER_LIBRARIES})
 endif()
 
-# WAMR always static
-target_link_libraries(framebolt PRIVATE wamr)
+# Link your app with the WAMR runtime
+target_link_libraries(framebolt PRIVATE vmlib)
 
 #-----------------------------------------------------------
 # iOS-specific bundle properties

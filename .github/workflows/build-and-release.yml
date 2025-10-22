@@ -118,6 +118,7 @@ jobs:
         run: |
           git clone https://github.com/libsdl-org/SDL.git vendored/SDL
           git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf
+          git clone https://github.com/bytecodealliance/wasm-micro-runtime.git external/wamr
           cd vendored/SDL_ttf && ./external/download.sh && cd ../..
 
           if [ "$RUNNER_OS" = "Linux" ]; then
@@ -156,6 +157,7 @@ jobs:
         run: |
           git clone https://github.com/libsdl-org/SDL.git vendored/SDL
           git clone https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf
+          git clone https://github.com/bytecodealliance/wasm-micro-runtime.git external/wamr
           cd vendored/SDL_ttf
           ./external/Get-GitModules.ps1
           cd ../..
