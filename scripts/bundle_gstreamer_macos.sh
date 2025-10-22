@@ -1,4 +1,4 @@
-APP_BIN="$APP_PATH/Contents/MacOS/Framebolt"
+APP_BIN="$APP_PATH/Contents/MacOS/framebolt"
 
 for lib in "$FRAMEWORKS_DIR"/*.dylib; do
   BASENAME=$(basename "$lib")

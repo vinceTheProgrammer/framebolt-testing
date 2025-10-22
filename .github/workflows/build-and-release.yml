@@ -51,9 +51,6 @@ jobs:
             build_script: |
               cmake -S . -B build-macos -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
               cmake --build build-macos --config Release
-              mkdir -p artifacts
-              cp -R build-macos/Release/framebolt.app artifacts/
-              cd artifacts && zip -r ../framebolt-macos.zip framebolt.app
             artifact: framebolt-macos.zip
 
           # --- MOBILE: Android ---
@@ -260,10 +257,17 @@ jobs:
       - name: Copy font into app bundle (macOS)
         if: runner.os == 'macOS'
         run: |
-          APP_PATH="build/Framebolt.app"
+          APP_PATH="build/framebolt.app"
           RES_DIR="$APP_PATH/Contents/Resources"
           mkdir -p "$RES_DIR"
           cp "DejaVuSans.ttf" "$RES_DIR/"
+
+      - name: Compress archive (Mac)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p artifacts
+          cp -R build-macos/framebolt.app artifacts/
+          cd artifacts && zip -r ../framebolt-macos.zip framebolt.app
 
       - name: Compress archive (Windows)
         if: runner.os == 'Windows'
