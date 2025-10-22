@@ -135,6 +135,8 @@ if(PLATFORM_IOS)
     add_executable(framebolt MACOSX_BUNDLE ${SRC})
 elseif(PLATFORM_ANDROID)
     add_library(main SHARED ${SRC})
+elseif(PLATFORM_MAC)
+    add_executable(framebolt MACOSX_BUNDLE main.c)
 else()
     add_executable(framebolt WIN32 ${SRC})
 endif()
@@ -182,6 +184,11 @@ if(PLATFORM_IOS)
     target_sources(framebolt PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/ios-project/LaunchScreen.storyboard"
         "${CMAKE_CURRENT_SOURCE_DIR}/ios-project/Assets.xcassets"
+    )
+elseif(PLATFORM_MAC)
+    set_target_properties(framebolt PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/macos-project/Info.plist"
+        RESOURCE "${CMAKE_SOURCE_DIR}/macos-project/Assets.xcassets"
     )
 endif()
 

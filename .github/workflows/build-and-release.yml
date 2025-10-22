@@ -52,9 +52,8 @@ jobs:
               cmake -S . -B build-macos -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
               cmake --build build-macos --config Release
               mkdir -p artifacts
-              cp -R build/*.app artifacts/ 2>/dev/null || true
-              cp build-macos/framebolt artifacts/framebolt-macos || true
-              cd artifacts && zip -r ../framebolt-macos.zip ./*
+              cp -R build-macos/Release/framebolt.app artifacts/
+              cd artifacts && zip -r ../framebolt-macos.zip framebolt.app
             artifact: framebolt-macos.zip
 
           # --- MOBILE: Android ---
