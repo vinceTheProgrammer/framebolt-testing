@@ -231,11 +231,6 @@ jobs:
       - name: Build ${{ matrix.name }}
         run: ${{ matrix.build_script }}
 
-      - name: debug mac app name
-        if: runner.os == 'macOS'
-        run: |
-          ls build
-
       - name: Copy only required GStreamer DLLs
         if: runner.os == 'Windows'
         shell: pwsh
