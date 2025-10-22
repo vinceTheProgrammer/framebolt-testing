@@ -63,25 +63,8 @@ jobs:
               curl -L "$GST_ANDROID_URL" -o gstreamer-android.tar.xz
               tar -xf gstreamer-android.tar.xz
             build_script: |
-              # Create expected structure
-              mkdir -p android-project/app/src/main/jniLibs/{arm64-v8a,armeabi-v7a,x86,x86_64}
-              mkdir -p android-project/app/src/main/jni/gstreamer
-
-              # Copy includes (they’re same across ABIs)
-              mv arm64/include/* android-project/app/src/main/jni/gstreamer/
-
-              # Copy .so files into jniLibs
-              mv arm64/lib/*.so android-project/app/src/main/jniLibs/arm64-v8a/
-              mv armv7/lib/*.so android-project/app/src/main/jniLibs/armeabi-v7a/
-              mv x86/lib/*.so android-project/app/src/main/jniLibs/x86/
-              mv x86_64/lib/*.so android-project/app/src/main/jniLibs/x86_64/
-
-              cd android-project
-              ./gradlew assembleRelease
-              mkdir -p ../artifacts
-              cp app/build/outputs/apk/release/*.apk ../artifacts/
-              cd ../artifacts && zip -r framebolt-android.zip ./*
-            artifact: artifacts/framebolt-android.zip
+              echo "hello" > artifacts/debug.txt
+            artifact: artifacts/debug.txt
 
 
           # --- MOBILE: iOS ---
@@ -110,6 +93,50 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+        # 2. Install base dependencies required for Cerbero
+      - name: Install system dependencies
+        if: matrix.name == 'Android'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3 python3-pip python3-venv git \
+            build-essential autoconf automake libtool bison flex \
+            cmake meson ninja-build pkg-config \
+            unzip zip wget curl
+
+      # 3. Clone Cerbero (official GStreamer build system)
+      - name: Clone Cerbero
+        if: matrix.name == 'Android'
+        run: |
+          git clone https://gitlab.freedesktop.org/gstreamer/cerbero.git
+          cd cerbero
+          # Optional: Checkout specific GStreamer branch or tag
+          # git checkout 1.24
+
+      # 4. Bootstrap Cerbero for Android Universal
+      - name: Bootstrap Cerbero for Android Universal
+        if: matrix.name == 'Android'
+        working-directory: cerbero
+        run: |
+          ./cerbero-uninstalled -c config/cross-android-universal.cbc bootstrap
+
+      # 5. Build and package GStreamer for Android Universal
+      - name: Build GStreamer for Android Universal
+        if: matrix.name == 'Android'
+        working-directory: cerbero
+        run: |
+          ./cerbero-uninstalled -c config/cross-android-universal.cbc package gstreamer-1.0
+
+      # 6. Upload artifacts (e.g., .so libraries, AARs, etc.)
+      - name: Upload GStreamer Android Universal binaries
+        if: matrix.name == 'Android'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gstreamer-android-universal
+          path: |
+            cerbero/dist/android_universal/*.zip
+            cerbero/dist/android_universal/*.tar.*
 
       # --- Linux / macOS SDL deps ---
       - name: Set up dependencies (Linux/Mac only)
@@ -269,51 +296,6 @@ jobs:
         shell: pwsh
         run: |
           powershell Compress-Archive -Path build\\Release\\* -DestinationPath framebolt-windows.zip
-
-
-      # 2. Install base dependencies required for Cerbero
-      - name: Install system dependencies
-        if: matrix.name == 'Android'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            python3 python3-pip python3-venv git \
-            build-essential autoconf automake libtool bison flex \
-            cmake meson ninja-build pkg-config \
-            unzip zip wget curl
-
-      # 3. Clone Cerbero (official GStreamer build system)
-      - name: Clone Cerbero
-        if: matrix.name == 'Android'
-        run: |
-          git clone https://gitlab.freedesktop.org/gstreamer/cerbero.git
-          cd cerbero
-          # Optional: Checkout specific GStreamer branch or tag
-          # git checkout 1.24
-
-      # 4. Bootstrap Cerbero for Android Universal
-      - name: Bootstrap Cerbero for Android Universal
-        if: matrix.name == 'Android'
-        working-directory: cerbero
-        run: |
-          ./cerbero-uninstalled -c config/cross-android-universal.cbc bootstrap
-
-      # 5. Build and package GStreamer for Android Universal
-      - name: Build GStreamer for Android Universal
-        if: matrix.name == 'Android'
-        working-directory: cerbero
-        run: |
-          ./cerbero-uninstalled -c config/cross-android-universal.cbc package gstreamer-1.0
-
-      # 6. Upload artifacts (e.g., .so libraries, AARs, etc.)
-      - name: Upload GStreamer Android Universal binaries
-        if: matrix.name == 'Android'
-        uses: actions/upload-artifact@v4
-        with:
-          name: gstreamer-android-universal
-          path: |
-            cerbero/dist/android_universal/*.zip
-            cerbero/dist/android_universal/*.tar.*
             
 
       - name: Upload CI artifact
