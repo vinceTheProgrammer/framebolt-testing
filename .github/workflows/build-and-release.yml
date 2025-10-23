@@ -58,12 +58,12 @@ jobs:
             os: ubuntu-latest
             download_script: |
               GST_ANDROID_URL="https://gstreamer.freedesktop.org/data/pkg/android/1.26.7/gstreamer-1.0-android-universal-1.26.7.tar.xz"
-              mkdir -p android-project/app/src/main/jni/
               echo "Downloading $GST_ANDROID_URL..."
               curl -L "$GST_ANDROID_URL" -o gstreamer-android.tar.xz
               tar -xf gstreamer-android.tar.xz
             build_script: |
               # Create expected structure
+              mkdir -p android-project/app/src/main/jni/
               mkdir -p android-project/app/src/main/jniLibs/{arm64-v8a,armeabi-v7a,x86,x86_64}
               mkdir -p android-project/app/src/main/jni/gstreamer
 
