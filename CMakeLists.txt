@@ -68,7 +68,12 @@ else()
     elseif(PLATFORM_MAC)
         set(GSTREAMER_ROOT "/Library/Frameworks/GStreamer.framework/Versions/Current")
         set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
+    elseif(PLATFORM_ANDROID)
+        set(GSTREAMER_ROOT "${CMAKE_SOURCE_DIR}/android-project/app/src/main/jni/gstreamer")
+        set(GSTREAMER_LIBRARY_DIRS "${CMAKE_SOURCE_DIR}/android-project/app/libs/${ANDROID_ABI}")
     endif()
+
+    message(STATUS "GStreamer library dirs: ${GSTREAMER_LIBRARY_DIRS}")
 
     set(GSTREAMER_INCLUDE_DIRS
         "${GSTREAMER_ROOT}/include/gstreamer-1.0"
@@ -79,10 +84,23 @@ else()
     link_directories(${GSTREAMER_LIBRARY_DIRS})
 
     # Explicitly find the core GStreamer and GLib libs
-    find_library(GSTREAMER_CORE_LIB gstreamer-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
-    find_library(GST_BASE_LIB gstbase-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
-    find_library(GLIB_LIB glib-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
-    find_library(GOBJECT_LIB gobject-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+    if(PLATFORM_ANDROID)
+    set(GSTREAMER_CORE_LIB  "${GSTREAMER_LIBRARY_DIRS}/libgstreamer-1.0.so")
+    set(GST_BASE_LIB        "${GSTREAMER_LIBRARY_DIRS}/libgstbase-1.0.so")
+    set(GLIB_LIB            "${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.so")
+    set(GOBJECT_LIB         "${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.so")
+    else()
+        find_library(GSTREAMER_CORE_LIB gstreamer-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+        find_library(GST_BASE_LIB gstbase-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+        find_library(GLIB_LIB glib-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+        find_library(GOBJECT_LIB gobject-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+    endif()
+
+    message(STATUS "GStreamer core: ${GSTREAMER_CORE_LIB}")
+    message(STATUS "GStreamer base: ${GST_BASE_LIB}")
+    message(STATUS "GLib: ${GLIB_LIB}")
+    message(STATUS "GObject: ${GOBJECT_LIB}")
+
 
     set(GSTREAMER_LIBRARIES
         ${GSTREAMER_CORE_LIB}
@@ -101,17 +119,36 @@ set(WAMR_ROOT_DIR "${CMAKE_SOURCE_DIR}/external/wamr")
 # You can adjust these per-platform as needed
 if(PLATFORM_LINUX)
     set(WAMR_BUILD_PLATFORM "linux")
+    set(WAMR_BUILD_TARGET "X86_64")
 elseif(PLATFORM_WINDOWS)
     set(WAMR_BUILD_PLATFORM "windows")
+    set(WAMR_BUILD_TARGET "X86_64")
 elseif(PLATFORM_MAC)
     set(WAMR_BUILD_PLATFORM "darwin")
+    set(WAMR_BUILD_TARGET "X86_64")
 elseif(PLATFORM_ANDROID)
     set(WAMR_BUILD_PLATFORM "android")
+
+    # Set WAMR target based on ANDROID_ABI
+    if(ANDROID_ABI STREQUAL "arm64-v8a")
+        set(WAMR_BUILD_TARGET "AARCH64")
+    elseif(ANDROID_ABI STREQUAL "armeabi-v7a")
+        set(WAMR_BUILD_TARGET "ARM32")
+    elseif(ANDROID_ABI STREQUAL "x86")
+        set(WAMR_BUILD_TARGET "X86_32")
+    elseif(ANDROID_ABI STREQUAL "x86_64")
+        set(WAMR_BUILD_TARGET "X86_64")
+    else()
+        message(FATAL_ERROR "Unsupported ANDROID_ABI: ${ANDROID_ABI}")
+    endif()
+
+    # Disable MAP_32BIT for Android builds
+    # add_definitions(-DWASM_USE_MAP_32BIT=0)
 elseif(PLATFORM_IOS)
     set(WAMR_BUILD_PLATFORM "darwin") # iOS uses Darwin platform too
+    set(WAMR_BUILD_TARGET "X86_64")
 endif()
 
-set(WAMR_BUILD_TARGET "X86_64")        # or "AARCH64" on ARM64 devices
 set(WAMR_BUILD_INTERP 1)
 set(WAMR_BUILD_FAST_INTERP 1)
 set(WAMR_BUILD_AOT 1)
@@ -148,6 +185,9 @@ endif()
 # SDL3 static everywhere except Linux
 if(PLATFORM_LINUX)
     target_link_libraries(framebolt PRIVATE SDL3::SDL3 SDL3_ttf::SDL3_ttf)
+elseif(PLATFORM_ANDROID)
+    target_link_libraries(main PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf)
+    target_compile_definitions(main PRIVATE SDL_STATIC)
 else()
     target_link_libraries(framebolt PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf)
 endif()
@@ -161,13 +201,21 @@ if(PLATFORM_IOS)
         ${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.a
         ${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.a
     )
+elseif(PLATFORM_ANDROID)
+    message(STATUS "Dynamic linking GStreamer")
+    target_link_libraries(main PRIVATE ${GSTREAMER_LIBRARIES})
+    target_compile_definitions(main PRIVATE SDL_STATIC)
 else()
     message(STATUS "Dynamic linking GStreamer")
     target_link_libraries(framebolt PRIVATE ${GSTREAMER_LIBRARIES})
 endif()
 
 # Link your app with the WAMR runtime
-target_link_libraries(framebolt PRIVATE vmlib)
+if(PLATFORM_ANDROID)
+    target_link_libraries(main PRIVATE vmlib)
+else()
+    target_link_libraries(framebolt PRIVATE vmlib)
+endif()
 
 #-----------------------------------------------------------
 # iOS-specific bundle properties

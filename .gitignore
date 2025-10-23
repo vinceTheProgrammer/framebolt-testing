@@ -9,3 +9,6 @@ ttf_bundle_later
 arm64
 external
 third_party
+gstreamer-1.0-android-universal-1.27.2.1
+gstreamer-1.0-android-universal-1.27.2.1-runtime
+android-project/app/libs
