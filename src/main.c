@@ -50,8 +50,32 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Get the base path where the app is running
+    char *base_path = SDL_GetBasePath();
+    if (!base_path) {
+        printf("SDL_GetBasePath Error: %s\n", SDL_GetError());
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    // Allocate a new string for font_path
+    const char *font_name = "DejaVuSans.ttf";
+    size_t path_len = strlen(base_path) + strlen(font_name) + 1;
+    char *font_path = malloc(path_len);
+    if (!font_path) {
+        printf("malloc failed\n");
+        SDL_free(base_path);
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    // Build the full path string
+    strcpy(font_path, base_path);
+    strcat(font_path, font_name);
+
     // --- Load font (use bundled font or system one) ---
-    const char *font_path = "DejaVuSans.ttf";  // include this in your assets folder
     TTF_Font *font = TTF_OpenFont(font_path, 32);
     if (!font) {
         SDL_Log("Failed to load font: %s", SDL_GetError());
