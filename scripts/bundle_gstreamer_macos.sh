@@ -14,50 +14,64 @@ mkdir -p "$FRAMEWORKS_DIR" "$PLUGIN_DEST"
 
 COPIED_LIBS_FILE="$(mktemp)"
 
-# --- Helpers ---
 has_copied() { grep -Fxq "$1" "$COPIED_LIBS_FILE" 2>/dev/null; }
 mark_copied() { echo "$1" >> "$COPIED_LIBS_FILE"; }
+
+# --- Resolve @rpath entries to actual files in $GST_PREFIX/lib ---
+resolve_dylib_path() {
+  local dep="$1"
+  if [[ "$dep" == @rpath/* ]]; then
+    local name="${dep#@rpath/}"
+    local candidate="$GST_PREFIX/lib/$name"
+    if [[ -f "$candidate" ]]; then
+      echo "$candidate"
+      return
+    fi
+  fi
+  echo "$dep"
+}
 
 # --- Recursive copy function ---
 copy_dylib_recursive() {
   local dylib_path="$1"
+  local resolved_path
+  resolved_path=$(resolve_dylib_path "$dylib_path")
 
-  if has_copied "$dylib_path"; then
-    echo "  [skip] Already copied: $dylib_path"
+  if has_copied "$resolved_path"; then
+    echo "  [skip] Already copied: $resolved_path"
     return
   fi
-  mark_copied "$dylib_path"
+  mark_copied "$resolved_path"
 
   local dylib_name
-  dylib_name=$(basename "$dylib_path")
+  dylib_name=$(basename "$resolved_path")
 
-  echo "  [copy] $dylib_path → $FRAMEWORKS_DIR/$dylib_name"
-  if [[ ! -f "$dylib_path" ]]; then
-    echo "  [warn] Dylib not found on disk: $dylib_path"
+  if [[ ! -f "$resolved_path" ]]; then
+    echo "  [warn] Dylib not found on disk: $resolved_path"
     return
   fi
 
-  cp -a "$dylib_path" "$FRAMEWORKS_DIR/$dylib_name"
+  echo "  [copy] $resolved_path → $FRAMEWORKS_DIR/$dylib_name"
+  cp -a "$resolved_path" "$FRAMEWORKS_DIR/$dylib_name"
 
   echo "  [set-id] install_name_tool -id @rpath/$dylib_name"
   install_name_tool -id "@rpath/$dylib_name" "$FRAMEWORKS_DIR/$dylib_name" || true
 
   echo "  [deps] Inspecting dependencies of $dylib_name..."
-  otool -L "$dylib_path" | awk 'NR>1 {print $1}' | while read -r dep; do
-    if [[ "$dep" == *".dylib" ]]; then
-      dep_basename=$(basename "$dep")
-      echo "     - Found dependency: $dep"
+  otool -L "$resolved_path" | awk 'NR>1 {print $1}' | while read -r dep; do
+    local resolved_dep
+    resolved_dep=$(resolve_dylib_path "$dep")
+    local dep_basename
+    dep_basename=$(basename "$resolved_dep")
 
-      if [[ "$dep" == "$GST_PREFIX/lib/"*".dylib" || "$dep" == /Library/Frameworks/GStreamer.framework/* ]]; then
-        echo "       ↳ GStreamer dylib detected → relinking to @rpath/$dep_basename"
-        install_name_tool -change "$dep" "@rpath/$dep_basename" "$FRAMEWORKS_DIR/$dylib_name" || true
-
-        if [[ ! -f "$FRAMEWORKS_DIR/$dep_basename" ]]; then
-          copy_dylib_recursive "$dep"
-        fi
-      else
-        echo "       ↳ Skipping (system or external): $dep"
+    if [[ "$resolved_dep" == "$GST_PREFIX/lib/"*".dylib" || "$resolved_dep" == @rpath/libgst* || "$resolved_dep" == @rpath/libgobject* || "$resolved_dep" == @rpath/libglib* ]]; then
+      echo "     ↳ GStreamer dependency: $resolved_dep → relinking to @rpath/$dep_basename"
+      install_name_tool -change "$dep" "@rpath/$dep_basename" "$FRAMEWORKS_DIR/$dylib_name" || true
+      if [[ ! -f "$FRAMEWORKS_DIR/$dep_basename" ]]; then
+        copy_dylib_recursive "$resolved_dep"
       fi
+    else
+      echo "     ↳ Skipping non-GStreamer dep: $dep"
     fi
   done
 }
@@ -66,10 +80,13 @@ copy_dylib_recursive() {
 echo "🔍 Scanning app binary dependencies..."
 otool -L "$APP_BIN" | awk 'NR>1 {print $1}' | while read -r dep; do
   echo "  [app-dep] $dep"
-  if [[ "$dep" == *"GStreamer.framework"*".dylib" ]]; then
-    echo "  [match] GStreamer dylib found: $dep"
-    copy_dylib_recursive "$dep"
-    dep_basename=$(basename "$dep")
+  local resolved
+  resolved=$(resolve_dylib_path "$dep")
+
+  if [[ "$resolved" == "$GST_PREFIX/lib/"*".dylib" || "$resolved" == @rpath/libgst* || "$resolved" == @rpath/libgobject* || "$resolved" == @rpath/libglib* ]]; then
+    echo "  [match] GStreamer dylib found: $resolved"
+    copy_dylib_recursive "$resolved"
+    dep_basename=$(basename "$resolved")
     echo "  [relink] install_name_tool -change $dep @rpath/$dep_basename $APP_BIN"
     install_name_tool -change "$dep" "@rpath/$dep_basename" "$APP_BIN" || true
   else
@@ -83,17 +100,18 @@ install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP_BIN" || true
 echo "🧩 Copying GStreamer plugins (excluding .a and .pc)..."
 rsync -av --exclude='*.a' --exclude='*.pc' "$PLUGIN_SRC/" "$PLUGIN_DEST/"
 
-# --- Relink plugin dependencies ---
 echo "🔗 Relinking plugin dependencies..."
 find "$PLUGIN_DEST" -type f -perm +111 -name "*.so" | while read -r plugin; do
   echo "  [plugin] $(basename "$plugin")"
   otool -L "$plugin" | awk 'NR>1 {print $1}' | while read -r dep; do
-    if [[ "$dep" == *"GStreamer.framework"*".dylib" ]]; then
-      dep_basename=$(basename "$dep")
+    local resolved
+    resolved=$(resolve_dylib_path "$dep")
+    dep_basename=$(basename "$resolved")
+    if [[ "$resolved" == "$GST_PREFIX/lib/"*".dylib" || "$resolved" == @rpath/libgst* || "$resolved" == @rpath/libgobject* || "$resolved" == @rpath/libglib* ]]; then
       echo "    ↳ Relinking $dep → @rpath/$dep_basename"
       install_name_tool -change "$dep" "@rpath/$dep_basename" "$plugin" || true
       if [[ ! -f "$FRAMEWORKS_DIR/$dep_basename" ]]; then
-        copy_dylib_recursive "$dep"
+        copy_dylib_recursive "$resolved"
       fi
     fi
   done
