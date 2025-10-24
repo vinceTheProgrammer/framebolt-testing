@@ -144,9 +144,25 @@ elseif(PLATFORM_ANDROID)
 
     # Disable MAP_32BIT for Android builds
     # add_definitions(-DWASM_USE_MAP_32BIT=0)
+
 elseif(PLATFORM_IOS)
-    set(WAMR_BUILD_PLATFORM "darwin") # iOS uses Darwin platform too
-    set(WAMR_BUILD_TARGET "X86_64")
+    set(WAMR_BUILD_PLATFORM "darwin")  # iOS uses Darwin base
+
+    # Handle both simulator architectures
+    if(CMAKE_OSX_SYSROOT MATCHES "iphonesimulator")
+        if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+            set(WAMR_BUILD_TARGET "AARCH64")  # Apple Silicon simulator
+        elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
+            set(WAMR_BUILD_TARGET "X86_64")   # Intel simulator
+        else()
+            message(FATAL_ERROR "Unsupported simulator architecture: ${CMAKE_OSX_ARCHITECTURES}")
+        endif()
+    else()
+        # In case you ever build for real devices later
+        set(WAMR_BUILD_TARGET "AARCH64")
+    endif()
+
+    message(STATUS "Building WAMR for iOS (${WAMR_BUILD_PLATFORM}, target=${WAMR_BUILD_TARGET})")
 endif()
 
 set(WAMR_BUILD_INTERP 1)
