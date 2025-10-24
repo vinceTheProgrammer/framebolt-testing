@@ -248,6 +248,12 @@ jobs:
           $outDir = "build\Release"
           Copy-Item "DejaVuSans.ttf" -Destination $outDir -Force
 
+      - name: Remove .libs (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Remove-Item "build\Release\*.lib" -Force -ErrorAction SilentlyContinue
+
       - name: Copy font into app bundle (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -268,7 +274,7 @@ jobs:
         shell: pwsh
         run: |
           powershell Compress-Archive -Path build\\Release\\* -DestinationPath framebolt-windows.zip
-            
+
 
       - name: Upload CI artifact
         uses: actions/upload-artifact@v4
