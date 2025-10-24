@@ -19,10 +19,10 @@ mark_copied() { echo "$1" >> "$COPIED_LIBS_FILE"; }
 
 # --- Resolve @rpath entries to actual files in $GST_PREFIX/lib ---
 resolve_dylib_path() {
-  local dep="$1"
+  dep="$1"
   if [[ "$dep" == @rpath/* ]]; then
-    local name="${dep#@rpath/}"
-    local candidate="$GST_PREFIX/lib/$name"
+    name="${dep#@rpath/}"
+    candidate="$GST_PREFIX/lib/$name"
     if [[ -f "$candidate" ]]; then
       echo "$candidate"
       return
@@ -33,8 +33,7 @@ resolve_dylib_path() {
 
 # --- Recursive copy function ---
 copy_dylib_recursive() {
-  local dylib_path="$1"
-  local resolved_path
+  dylib_path="$1"
   resolved_path=$(resolve_dylib_path "$dylib_path")
 
   if has_copied "$resolved_path"; then
@@ -43,7 +42,6 @@ copy_dylib_recursive() {
   fi
   mark_copied "$resolved_path"
 
-  local dylib_name
   dylib_name=$(basename "$resolved_path")
 
   if [[ ! -f "$resolved_path" ]]; then
@@ -59,9 +57,7 @@ copy_dylib_recursive() {
 
   echo "  [deps] Inspecting dependencies of $dylib_name..."
   otool -L "$resolved_path" | awk 'NR>1 {print $1}' | while read -r dep; do
-    local resolved_dep
     resolved_dep=$(resolve_dylib_path "$dep")
-    local dep_basename
     dep_basename=$(basename "$resolved_dep")
 
     if [[ "$resolved_dep" == "$GST_PREFIX/lib/"*".dylib" || "$resolved_dep" == @rpath/libgst* || "$resolved_dep" == @rpath/libgobject* || "$resolved_dep" == @rpath/libglib* ]]; then
@@ -80,7 +76,6 @@ copy_dylib_recursive() {
 echo "🔍 Scanning app binary dependencies..."
 otool -L "$APP_BIN" | awk 'NR>1 {print $1}' | while read -r dep; do
   echo "  [app-dep] $dep"
-  local resolved
   resolved=$(resolve_dylib_path "$dep")
 
   if [[ "$resolved" == "$GST_PREFIX/lib/"*".dylib" || "$resolved" == @rpath/libgst* || "$resolved" == @rpath/libgobject* || "$resolved" == @rpath/libglib* ]]; then
@@ -104,7 +99,6 @@ echo "🔗 Relinking plugin dependencies..."
 find "$PLUGIN_DEST" -type f -perm +111 -name "*.so" | while read -r plugin; do
   echo "  [plugin] $(basename "$plugin")"
   otool -L "$plugin" | awk 'NR>1 {print $1}' | while read -r dep; do
-    local resolved
     resolved=$(resolve_dylib_path "$dep")
     dep_basename=$(basename "$resolved")
     if [[ "$resolved" == "$GST_PREFIX/lib/"*".dylib" || "$resolved" == @rpath/libgst* || "$resolved" == @rpath/libgobject* || "$resolved" == @rpath/libglib* ]]; then
