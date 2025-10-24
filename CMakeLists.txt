@@ -37,8 +37,31 @@ set(SDL_SHARED OFF CACHE BOOL "" FORCE)
 set(SDL_STATIC ON CACHE BOOL "" FORCE)
 
 # Use vendored builds for SDL3 and SDL_ttf
-add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
-add_subdirectory(vendored/SDL_ttf EXCLUDE_FROM_ALL)
+add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
+add_subdirectory(external/SDL_ttf EXCLUDE_FROM_ALL)
+
+#-----------------------------------------------------------
+# Dear ImGui setup
+#-----------------------------------------------------------
+set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/external/imgui")
+
+set(IMGUI_SOURCES
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/imgui_demo.cpp # optional, but useful
+    ${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+)
+
+add_library(imgui STATIC ${IMGUI_SOURCES})
+target_include_directories(imgui PUBLIC
+    ${IMGUI_DIR}
+    ${IMGUI_DIR}/backends
+)
+
+target_link_libraries(imgui PUBLIC SDL3::SDL3-static)
 
 #-----------------------------------------------------------
 # GStreamer setup
@@ -207,12 +230,12 @@ endif()
 
 # SDL3 static everywhere except Linux
 if(PLATFORM_LINUX)
-    target_link_libraries(framebolt PRIVATE SDL3::SDL3 SDL3_ttf::SDL3_ttf)
+    target_link_libraries(framebolt PRIVATE SDL3::SDL3 SDL3_ttf::SDL3_ttf imgui)
 elseif(PLATFORM_ANDROID)
-    target_link_libraries(main PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf)
+    target_link_libraries(main PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf imgui)
     target_compile_definitions(main PRIVATE SDL_STATIC)
 else()
-    target_link_libraries(framebolt PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf)
+    target_link_libraries(framebolt PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf imgui)
 endif()
 
 # GStreamer dynamic everywhere except iOS
