@@ -257,7 +257,7 @@ jobs:
       - name: Copy font into app bundle (macOS)
         if: runner.os == 'macOS'
         run: |
-          APP_PATH="build/framebolt.app"
+          APP_PATH="build-macos/framebolt.app"
           RES_DIR="$APP_PATH/Contents/Resources"
           mkdir -p "$RES_DIR"
           cp "DejaVuSans.ttf" "$RES_DIR/"
