@@ -162,6 +162,13 @@ elseif(PLATFORM_IOS)
         set(WAMR_BUILD_TARGET "AARCH64")
     endif()
 
+    # iOS sandbox and linker differences
+    add_definitions(
+        -DWASM_USE_MAP_32BIT=0
+        -DWASM_DISABLE_HW_BOUND_CHECK=1
+        -DWASM_DISABLE_PTHREAD_SETNAME=1
+    )
+
     message(STATUS "Building WAMR for iOS (${WAMR_BUILD_PLATFORM}, target=${WAMR_BUILD_TARGET})")
 endif()
 
