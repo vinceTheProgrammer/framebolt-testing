@@ -1,0 +1,1 @@
+cp "DejaVuSans.ttf" build

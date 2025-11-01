@@ -20,261 +20,88 @@ jobs:
           # --- DESKTOP: Linux ---
           - name: Desktop (Linux)
             os: ubuntu-latest
-            download_script: |
-              echo "hi"
-            build_script: |
-              cmake -S . -B build -DUSE_SYSTEM_GSTREAMER=ON
-              cmake --build build --config Release
-              cp "DejaVuSans.ttf" build
-              zip -j framebolt-linux.zip build/framebolt build/DejaVuSans.ttf
-            artifact: framebolt-linux.zip
+            prepare: |
+              ./scripts/_prepare/common/prepare_external_repos.sh
+              ./scripts/_prepare/linux/install_dependencies.sh
+            build: |
+              ./scripts/_build/linux/build.sh
+            finalize: |
+              ./scripts/_finalize/linux/copy_assets.sh
+            package: |
+              ./scripts/_package/linux/package.sh
 
           # --- DESKTOP: Windows ---
           - name: Desktop (Windows)
             os: windows-latest
-            gst_runtime_url: "https://gstreamer.freedesktop.org/data/pkg/windows/1.26.7/msvc/gstreamer-1.0-msvc-x86_64-1.26.7.msi"
-            gst_dev_url: "https://gstreamer.freedesktop.org/data/pkg/windows/1.26.7/msvc/gstreamer-1.0-devel-msvc-x86_64-1.26.7.msi"
-            download_script: |
-              echo "hi"
-            build_script: |
-              cmake -S . -B build -DCMAKE_PREFIX_PATH="C:\\gstreamer\\1.0\\msvc_x86_64"
-              cmake --build build --config Release
-            artifact: framebolt-windows.zip
+            prepare: |
+              ./scripts/_prepare/windows/prepare_external_repos.ps1
+              ./scripts/_prepare/windows/install_gstreamer.ps1
+            build: |
+              ./scripts/_build/windows/build.ps1
+            finalize: |
+              ./scripts/_finalize/windows/copy_assets.ps1
+              ./scripts/_finalize/windows/copy_dlls_recursive.ps1
+              ./scripts/_finalize/windows/remove_libs.ps1
+            package: |
+              ./scripts/_package/windows/package.ps1
 
           # --- DESKTOP: macOS ---
           - name: Desktop (macOS)
             os: macos-latest
-            gst_pkg_devel_url: "https://gstreamer.freedesktop.org/data/pkg/osx/1.26.7/gstreamer-1.0-devel-1.26.7-universal.pkg"
-            gst_pkg_runtime_url: "https://gstreamer.freedesktop.org/data/pkg/osx/1.26.7/gstreamer-1.0-1.26.7-universal.pkg"
-            download_script: |
-              echo "hi"
-            build_script: |
-              cmake -S . -B build-macos -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
-              cmake --build build-macos --config Release
-            artifact: framebolt-macos.zip
+            prepare: |
+              ./scripts/_prepare/common/prepare_external_repos.sh
+              ./scripts/_prepare/macos/install_gstreamer.sh
+            build: |
+              ./scripts/_build/macos/build.sh
+            finalize: |
+              ./scripts/_finalize/macos/copy_assets.sh
+              ./scripts/_finalize/macos/bundle_gstreamer_macos.sh
+            package: |
+              ./scripts/_package/macos/package.sh
 
           # --- MOBILE: Android ---
           - name: Android
             os: ubuntu-latest
-            download_script: |
-              GST_ANDROID_URL="https://github.com/vinceTheProgrammer/gstreamer-android-universal-dynamic-build/releases/download/v1.27.2.1/gstreamer-1.0-android-universal-1.27.2.1-runtime.tar.xz"
-              echo "Downloading $GST_ANDROID_URL..."
-              curl -L "$GST_ANDROID_URL" -o gstreamer-android.tar.xz
-              tar -xf gstreamer-android.tar.xz
-            build_script: |
-              # Create expected structure
-              # mkdir -p android-project/app/src/main/jni/
-              mkdir -p android-project/app/libs/{arm64-v8a,armeabi-v7a,x86,x86_64}
-              # mkdir -p android-project/app/src/main/jni/gstreamer
-
-              # Copy includes (they’re same across ABIs)
-              # mv arm64/include/* android-project/app/src/main/jni/gstreamer/
-
-              # Copy .so files into jniLibs
-              mv arm64/lib/*.so android-project/app/libs/arm64-v8a/
-              mv armv7/lib/*.so android-project/app/libs/armeabi-v7a/
-              mv x86/lib/*.so android-project/app/libs/x86/
-              mv x86_64/lib/*.so android-project/app/libs/x86_64/
-
-              cd android-project
-              ./gradlew assembleRelease
-              mkdir -p ../artifacts
-              cp app/build/outputs/apk/release/*.apk ../artifacts/
-              cd ../artifacts && zip -r framebolt-android.zip ./*
-            artifact: artifacts/framebolt-android.zip
-
+            prepare: |
+              ./scripts/_prepare/common/prepare_external_repos.sh
+              ./scripts/_prepare/android/prepare.sh
+              ./scripts/_prepare/android/copy-android-gstreamer-libs.sh
+              ./scripts/_prepare/android/copy_assets.sh
+            build: |
+              ./scripts/_build/android/build.sh
+            finalize: |
+              echo "nothing to do"
+            package: |
+              ./scripts/_package/android/package.sh
 
           # --- MOBILE: iOS ---
           - name: iOS
             os: macos-latest
-            download_script: |
-              GST_IOS_URL="https://gstreamer.freedesktop.org/data/pkg/ios/1.26.7/gstreamer-1.0-devel-1.26.7-ios-universal.pkg"
-              echo "Downloading $GST_IOS_URL..."
-              curl -L "$GST_IOS_URL" -o gstreamer-ios.tar.xz
-              tar -xf gstreamer-ios.tar.xz
-            gst_pkg_devel_url: "https://gstreamer.freedesktop.org/data/pkg/osx/1.26.7/gstreamer-1.0-devel-1.26.7-universal.pkg"
-            gst_pkg_runtime_url: "https://gstreamer.freedesktop.org/data/pkg/osx/1.26.7/gstreamer-1.0-1.26.7-universal.pkg"
-            build_script: |
-              GST_IOS_DIR=$(find . -type d -name "gstreamer-1.0-ios-universal-*")
-              cmake -S . -B build-ios -G Xcode \
-                -DCMAKE_SYSTEM_NAME=iOS \
-                -DCMAKE_OSX_SYSROOT=iphonesimulator \
-                -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
-                -DCMAKE_SUPPRESS_REGENERATION=ON \
-                -DCMAKE_PREFIX_PATH="$GST_IOS_DIR"
-              cmake --build build-ios --config Debug --target vmlib
-              mkdir -p artifacts
-              find build-ios -name "*.app" -exec cp -R {} artifacts/ \;
-              cd artifacts && zip -r ../framebolt-ios.zip ./*
-            artifact: framebolt-ios.zip
+            prepare: |
+              ./scripts/_prepare/common/prepare_external_repos.sh
+              ./scripts/_prepare/macos/install_gstreamer.sh
+            build: |
+              ./scripts/_build/ios/build.sh
+            finalize: |
+              echo "nothing to do"
+            package: |
+              ./scripts/_package/ios/package.sh
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- Linux / macOS SDL deps ---
-      - name: Set up dependencies (Linux/Mac only)
-        if: runner.os != 'Windows'
-        run: |
-          git clone https://github.com/libsdl-org/SDL.git external/SDL
-          git clone https://github.com/libsdl-org/SDL_ttf.git external/SDL_ttf
-          git clone https://github.com/bytecodealliance/wasm-micro-runtime.git external/wamr
-          cd external/SDL_ttf && ./external/download.sh && cd ../..
-
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            echo "🧱 Installing Linux build dependencies..."
-            sudo apt-get update || true
-            sudo apt-get install -y \
-              build-essential cmake zip git \
-              libx11-dev libxext-dev libxrandr-dev libxrender-dev libxss-dev \
-              libxcursor-dev libxi-dev libxinerama-dev libwayland-dev libxkbcommon-dev \
-              libdrm-dev libgbm-dev libasound2-dev libpulse-dev libudev-dev libdbus-1-dev \
-              libibus-1.0-dev fcitx-libs-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev
-
-          elif [ "$RUNNER_OS" = "macOS" ]; then
-            echo "🍎 Installing GStreamer for macOS..."
-            mkdir -p gst-installer
-            cd gst-installer
-
-            echo "Downloading GStreamer runtime..."
-            curl -L "${{ matrix.gst_pkg_runtime_url }}" -o gstreamer-runtime.pkg
-
-            echo "Downloading GStreamer devel..."
-            curl -L "${{ matrix.gst_pkg_devel_url }}" -o gstreamer-devel.pkg
-
-            echo "Installing both packages..."
-            sudo installer -pkg gstreamer-runtime.pkg -target /
-            sudo installer -pkg gstreamer-devel.pkg -target /
-
-            echo "✅ GStreamer framework installed to /Library/Frameworks/"
-            cd ..
-
-          fi
-
-      # --- Windows SDL + GStreamer setup ---
-      - name: Set up dependencies (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          git clone https://github.com/libsdl-org/SDL.git external/SDL
-          git clone https://github.com/libsdl-org/SDL_ttf.git external/SDL_ttf
-          git clone https://github.com/bytecodealliance/wasm-micro-runtime.git external/wamr
-          cd external/SDL_ttf
-          ./external/Get-GitModules.ps1
-          cd ../..
-          echo "Installing GStreamer dev..."
-          curl -L ${{ matrix.gst_dev_url }} -o gstreamer-devel.msi
-          $args = '/i', 'gstreamer-devel.msi', '/qn', 'INSTALLDIR=C:\gstreamer', '/L*v', 'C:\install.log'
-          $process = Start-Process msiexec -ArgumentList $args -Wait -PassThru
-          if ($process.ExitCode -ne 0) {
-            Write-Host "❌ GStreamer install failed with exit code $($process.ExitCode)"
-            Get-Content C:\install.log -Tail 20
-            exit 1
-          }
-          Write-Host "✅ GStreamer dev installed successfully"
-          curl -L ${{ matrix.gst_runtime_url }} -o gstreamer-runtime.msi
-          $args = '/i', 'gstreamer-runtime.msi', '/qn', 'INSTALLDIR=C:\gstreamer', '/L*v', 'C:\install.log'
-          $process = Start-Process msiexec -ArgumentList $args -Wait -PassThru
-          if ($process.ExitCode -ne 0) {
-            Write-Host "❌ GStreamer install failed with exit code $($process.ExitCode)"
-            Get-Content C:\install.log -Tail 20
-            exit 1
-          }
-          Write-Host "✅ GStreamer installed successfully"
-
-      - name: Download GStreamer ${{ matrix.name }}
-        run: ${{ matrix.download_script }}
-
-      - name: List C drive contents
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Host "Contents of C:\"
-          Get-ChildItem C:\ | Select-Object Name, LastWriteTime
-      - name: List C drive contents2
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Host "Contents of C:\gstreamer"
-          Get-ChildItem C:\gstreamer | Select-Object Name, LastWriteTime
-      - name: List C drive contents3
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Host "Contents of C:\gstreamer\1.0"
-          Get-ChildItem C:\gstreamer\1.0 | Select-Object Name, LastWriteTime
-
-      - name: Debug GStreamer path (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          echo "=== Checking for installed GStreamer frameworks ==="
-          ls -R /Library/Frameworks || true
-          echo "=== Checking GStreamer in /usr/local and /opt/homebrew ==="
-          ls -R /usr/local/Cellar/gstreamer* 2>/dev/null || true
-          ls -R /opt/homebrew/Cellar/gstreamer* 2>/dev/null || true
-      - name: Debug GStreamer archive (Android)
-        if: matrix.name == 'Android'
-        run: |
-          echo "=== Listing downloaded GStreamer ==="
-          ls -lh || true
-          echo "=== Checking for GStreamer tarballs ==="
-          file * || true
-      - name: Debug GStreamer archive (iOS)
-        if: matrix.name == 'iOS'
-        run: |
-          echo "=== Listing downloaded iOS GStreamer cache ==="
-          ls -lh || true
-          echo "=== File type check ==="
-          file * || true
-
+      - name: Prepare Build ${{ matrix.name }}
+        run: ${{ matrix.prepare }}
 
       - name: Build ${{ matrix.name }}
-        run: ${{ matrix.build_script }}
+        run: ${{ matrix.build }}
 
-      - name: Copy only required GStreamer DLLs
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          ./scripts/copy_dlls_recursive.ps1
+      - name: Finalize Build ${{ matrix.name }}
+        run: ${{ matrix.finalize }}
 
-      - name: Fix and bundle GStreamer dylibs
-        if: runner.os == 'macOS'
-        run: |
-          bash scripts/bundle_gstreamer_macos.sh
-
-      - name: Copy font (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $outDir = "build\Release"
-          Copy-Item "DejaVuSans.ttf" -Destination $outDir -Force
-
-      - name: Remove .libs (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Remove-Item "build\Release\*.lib" -Force -ErrorAction SilentlyContinue
-
-      - name: Copy font into app bundle (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          APP_PATH="build-macos/framebolt.app"
-          RES_DIR="$APP_PATH/Contents/Resources"
-          mkdir -p "$RES_DIR"
-          cp "DejaVuSans.ttf" "$RES_DIR/"
-
-      - name: Compress archive (Mac)
-        if: runner.os == 'macOS'
-        run: |
-          mkdir -p artifacts
-          cp -R build-macos/framebolt.app artifacts/
-          cd artifacts && zip -r ../framebolt-macos.zip framebolt.app
-
-      - name: Compress archive (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          powershell Compress-Archive -Path build\\Release\\* -DestinationPath framebolt-windows.zip
-
+      - name: Package Build ${{ matrix.name }}
+        run: ${{ matrix.package }}
 
       - name: Upload CI artifact
         uses: actions/upload-artifact@v4

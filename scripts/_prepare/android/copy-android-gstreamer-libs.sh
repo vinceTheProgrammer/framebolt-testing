@@ -1,3 +1,17 @@
+# Create expected structure
+# mkdir -p android-project/app/src/main/jni/
+# mkdir -p android-project/app/libs/{arm64-v8a,armeabi-v7a,x86,x86_64}
+# mkdir -p android-project/app/src/main/jni/gstreamer
+
+# Copy includes (they’re same across ABIs)
+# mv arm64/include/* android-project/app/src/main/jni/gstreamer/
+
+# Copy .so files into jniLibs
+# mv arm64/lib/*.so android-project/app/libs/arm64-v8a/
+# mv armv7/lib/*.so android-project/app/libs/armeabi-v7a/
+# mv x86/lib/*.so android-project/app/libs/x86/
+# mv x86_64/lib/*.so android-project/app/libs/x86_64/
+
 gstreamer_runtime_dir=gstreamer-1.0-android-universal-1.27.2.1-runtime
 gstreamer_devel_dir=gstreamer-1.0-android-universal-1.27.2.1
 
