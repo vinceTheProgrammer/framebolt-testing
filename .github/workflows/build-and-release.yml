@@ -29,6 +29,7 @@ jobs:
               ./scripts/_finalize/linux/copy_assets.sh
             package: |
               ./scripts/_package/linux/package.sh
+            artifact: framebolt-linux.zip
 
           # --- DESKTOP: Windows ---
           - name: Desktop (Windows)
@@ -44,6 +45,7 @@ jobs:
               ./scripts/_finalize/windows/remove_libs.ps1
             package: |
               ./scripts/_package/windows/package.ps1
+            artifact: framebolt-windows.zip
 
           # --- DESKTOP: macOS ---
           - name: Desktop (macOS)
@@ -58,6 +60,7 @@ jobs:
               ./scripts/_finalize/macos/bundle_gstreamer_macos.sh
             package: |
               ./scripts/_package/macos/package.sh
+            artifact: framebolt-macos.zip
 
           # --- MOBILE: Android ---
           - name: Android
@@ -73,6 +76,7 @@ jobs:
               echo "nothing to do"
             package: |
               ./scripts/_package/android/package.sh
+            artifact: framebolt-android.zip
 
           # --- MOBILE: iOS ---
           - name: iOS
@@ -86,6 +90,7 @@ jobs:
               echo "nothing to do"
             package: |
               ./scripts/_package/ios/package.sh
+            artifact: framebolt-ios.zip
 
     steps:
       - name: Checkout repository
