@@ -3,10 +3,10 @@ mkdir -p gst-installer
 cd gst-installer
 
 echo "Downloading GStreamer runtime..."
-curl -L "${{ matrix.gst_pkg_runtime_url }}" -o gstreamer-runtime.pkg
+curl -L "https://gstreamer.freedesktop.org/data/pkg/osx/1.26.7/gstreamer-1.0-1.26.7-universal.pkg" -o gstreamer-runtime.pkg
 
 echo "Downloading GStreamer devel..."
-curl -L "${{ matrix.gst_pkg_devel_url }}" -o gstreamer-devel.pkg
+curl -L "https://gstreamer.freedesktop.org/data/pkg/osx/1.26.7/gstreamer-1.0-devel-1.26.7-universal.pkg" -o gstreamer-devel.pkg
 
 echo "Installing both packages..."
 sudo installer -pkg gstreamer-runtime.pkg -target /
