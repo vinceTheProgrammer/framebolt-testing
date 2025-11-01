@@ -40,188 +40,192 @@ set(SDL_STATIC ON CACHE BOOL "" FORCE)
 add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(external/SDL_ttf EXCLUDE_FROM_ALL)
 
-#-----------------------------------------------------------
-# Dear ImGui setup
-#-----------------------------------------------------------
-set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/external/imgui")
+if(NOT PLATFORM_IOS)
 
-set(IMGUI_SOURCES
-    ${IMGUI_DIR}/imgui.cpp
-    ${IMGUI_DIR}/imgui_draw.cpp
-    ${IMGUI_DIR}/imgui_tables.cpp
-    ${IMGUI_DIR}/imgui_widgets.cpp
-    ${IMGUI_DIR}/imgui_demo.cpp # optional, but useful
-    ${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
-    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-)
+    #-----------------------------------------------------------
+    # Dear ImGui setup
+    #-----------------------------------------------------------
+    set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/external/imgui")
 
-add_library(imgui STATIC ${IMGUI_SOURCES})
-target_include_directories(imgui PUBLIC
-    ${IMGUI_DIR}
-    ${IMGUI_DIR}/backends
-)
-
-target_link_libraries(imgui PUBLIC SDL3::SDL3-static)
-
-#-----------------------------------------------------------
-# GStreamer setup
-#-----------------------------------------------------------
-if(PLATFORM_LINUX)
-    option(USE_SYSTEM_GSTREAMER "Use system GStreamer instead of bundled SDK" ON)
-else()
-    option(USE_SYSTEM_GSTREAMER "Use system GStreamer instead of bundled SDK" OFF)
-endif()
-
-set(GSTREAMER_MIN_VERSION "1.18")
-
-if(USE_SYSTEM_GSTREAMER)
-    message(STATUS "Using system-installed GStreamer")
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0>=${GSTREAMER_MIN_VERSION})
-    set(GSTREAMER_INCLUDE_DIRS ${GSTREAMER_INCLUDE_DIRS} ${GSTREAMER_INCLUDE_DIRS})
-    set(GSTREAMER_LIBRARIES ${GSTREAMER_LIBRARIES})
-    include_directories(${GSTREAMER_INCLUDE_DIRS})
-    link_directories(${GSTREAMER_LIBRARY_DIRS})
-else()
-    message(STATUS "Using bundled GStreamer SDK")
-
-    if(PLATFORM_WINDOWS)
-        set(GSTREAMER_ROOT "C:/gstreamer/1.0/msvc_x86_64")
-        set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
-    elseif(PLATFORM_MAC)
-        set(GSTREAMER_ROOT "/Library/Frameworks/GStreamer.framework/Versions/Current")
-        set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
-    elseif(PLATFORM_ANDROID)
-        set(GSTREAMER_ROOT "${CMAKE_SOURCE_DIR}/android-project/app/src/main/jni/gstreamer")
-        set(GSTREAMER_LIBRARY_DIRS "${CMAKE_SOURCE_DIR}/android-project/app/libs/${ANDROID_ABI}")
-    endif()
-
-    message(STATUS "GStreamer library dirs: ${GSTREAMER_LIBRARY_DIRS}")
-
-    set(GSTREAMER_INCLUDE_DIRS
-        "${GSTREAMER_ROOT}/include/gstreamer-1.0"
-        "${GSTREAMER_ROOT}/include/glib-2.0"
-        "${GSTREAMER_ROOT}/lib/glib-2.0/include"
+    set(IMGUI_SOURCES
+        ${IMGUI_DIR}/imgui.cpp
+        ${IMGUI_DIR}/imgui_draw.cpp
+        ${IMGUI_DIR}/imgui_tables.cpp
+        ${IMGUI_DIR}/imgui_widgets.cpp
+        ${IMGUI_DIR}/imgui_demo.cpp # optional, but useful
+        ${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
+        ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
     )
-    include_directories(${GSTREAMER_INCLUDE_DIRS})
-    link_directories(${GSTREAMER_LIBRARY_DIRS})
 
-    # Explicitly find the core GStreamer and GLib libs
-    if(PLATFORM_ANDROID)
-    set(GSTREAMER_CORE_LIB  "${GSTREAMER_LIBRARY_DIRS}/libgstreamer-1.0.so")
-    set(GST_BASE_LIB        "${GSTREAMER_LIBRARY_DIRS}/libgstbase-1.0.so")
-    set(GLIB_LIB            "${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.so")
-    set(GOBJECT_LIB         "${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.so")
-    else()
-        find_library(GSTREAMER_CORE_LIB gstreamer-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
-        find_library(GST_BASE_LIB gstbase-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
-        find_library(GLIB_LIB glib-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
-        find_library(GOBJECT_LIB gobject-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
-    endif()
-
-    message(STATUS "GStreamer core: ${GSTREAMER_CORE_LIB}")
-    message(STATUS "GStreamer base: ${GST_BASE_LIB}")
-    message(STATUS "GLib: ${GLIB_LIB}")
-    message(STATUS "GObject: ${GOBJECT_LIB}")
-
-
-    set(GSTREAMER_LIBRARIES
-        ${GSTREAMER_CORE_LIB}
-        ${GST_BASE_LIB}
-        ${GOBJECT_LIB}
-        ${GLIB_LIB}
+    add_library(imgui STATIC ${IMGUI_SOURCES})
+    target_include_directories(imgui PUBLIC
+        ${IMGUI_DIR}
+        ${IMGUI_DIR}/backends
     )
-endif()
 
-#-----------------------------------------------------------
-# WebAssembly Micro Runtime (WAMR)
-#-----------------------------------------------------------
-set(WAMR_ROOT_DIR "${CMAKE_SOURCE_DIR}/external/wamr")
+    target_link_libraries(imgui PUBLIC SDL3::SDL3-static)
 
-# Configure WAMR build features
-# You can adjust these per-platform as needed
-if(PLATFORM_LINUX)
-    set(WAMR_BUILD_PLATFORM "linux")
-    set(WAMR_BUILD_TARGET "X86_64")
-elseif(PLATFORM_WINDOWS)
-    set(WAMR_BUILD_PLATFORM "windows")
-    set(WAMR_BUILD_TARGET "X86_64")
-elseif(PLATFORM_MAC)
-    set(WAMR_BUILD_PLATFORM "darwin")
-    set(WAMR_BUILD_TARGET "X86_64")
-elseif(PLATFORM_ANDROID)
-    set(WAMR_BUILD_PLATFORM "android")
-
-    # Set WAMR target based on ANDROID_ABI
-    if(ANDROID_ABI STREQUAL "arm64-v8a")
-        set(WAMR_BUILD_TARGET "AARCH64")
-    elseif(ANDROID_ABI STREQUAL "armeabi-v7a")
-        set(WAMR_BUILD_TARGET "ARM32")
-    elseif(ANDROID_ABI STREQUAL "x86")
-        set(WAMR_BUILD_TARGET "X86_32")
-    elseif(ANDROID_ABI STREQUAL "x86_64")
-        set(WAMR_BUILD_TARGET "X86_64")
+    #-----------------------------------------------------------
+    # GStreamer setup
+    #-----------------------------------------------------------
+    if(PLATFORM_LINUX)
+        option(USE_SYSTEM_GSTREAMER "Use system GStreamer instead of bundled SDK" ON)
     else()
-        message(FATAL_ERROR "Unsupported ANDROID_ABI: ${ANDROID_ABI}")
+        option(USE_SYSTEM_GSTREAMER "Use system GStreamer instead of bundled SDK" OFF)
     endif()
 
-    # Disable MAP_32BIT for Android builds
-    # add_definitions(-DWASM_USE_MAP_32BIT=0)
+    set(GSTREAMER_MIN_VERSION "1.18")
 
-elseif(PLATFORM_IOS)
-    set(WAMR_BUILD_PLATFORM "darwin")  # iOS uses Darwin base
+    if(USE_SYSTEM_GSTREAMER)
+        message(STATUS "Using system-installed GStreamer")
+        find_package(PkgConfig REQUIRED)
+        pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0>=${GSTREAMER_MIN_VERSION})
+        set(GSTREAMER_INCLUDE_DIRS ${GSTREAMER_INCLUDE_DIRS} ${GSTREAMER_INCLUDE_DIRS})
+        set(GSTREAMER_LIBRARIES ${GSTREAMER_LIBRARIES})
+        include_directories(${GSTREAMER_INCLUDE_DIRS})
+        link_directories(${GSTREAMER_LIBRARY_DIRS})
+    else()
+        message(STATUS "Using bundled GStreamer SDK")
 
-    # Handle both simulator architectures
-    if(CMAKE_OSX_SYSROOT MATCHES "iphonesimulator")
-        if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
-            set(WAMR_BUILD_TARGET "AARCH64")  # Apple Silicon simulator
-        elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
-            set(WAMR_BUILD_TARGET "X86_64")   # Intel simulator
-        else()
-            message(FATAL_ERROR "Unsupported simulator architecture: ${CMAKE_OSX_ARCHITECTURES}")
+        if(PLATFORM_WINDOWS)
+            set(GSTREAMER_ROOT "C:/gstreamer/1.0/msvc_x86_64")
+            set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
+        elseif(PLATFORM_MAC)
+            set(GSTREAMER_ROOT "/Library/Frameworks/GStreamer.framework/Versions/Current")
+            set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
+        elseif(PLATFORM_ANDROID)
+            set(GSTREAMER_ROOT "${CMAKE_SOURCE_DIR}/android-project/app/src/main/jni/gstreamer")
+            set(GSTREAMER_LIBRARY_DIRS "${CMAKE_SOURCE_DIR}/android-project/app/libs/${ANDROID_ABI}")
         endif()
-    else()
-        # In case you ever build for real devices later
-        set(WAMR_BUILD_TARGET "AARCH64")
+
+        message(STATUS "GStreamer library dirs: ${GSTREAMER_LIBRARY_DIRS}")
+
+        set(GSTREAMER_INCLUDE_DIRS
+            "${GSTREAMER_ROOT}/include/gstreamer-1.0"
+            "${GSTREAMER_ROOT}/include/glib-2.0"
+            "${GSTREAMER_ROOT}/lib/glib-2.0/include"
+        )
+        include_directories(${GSTREAMER_INCLUDE_DIRS})
+        link_directories(${GSTREAMER_LIBRARY_DIRS})
+
+        # Explicitly find the core GStreamer and GLib libs
+        if(PLATFORM_ANDROID)
+        set(GSTREAMER_CORE_LIB  "${GSTREAMER_LIBRARY_DIRS}/libgstreamer-1.0.so")
+        set(GST_BASE_LIB        "${GSTREAMER_LIBRARY_DIRS}/libgstbase-1.0.so")
+        set(GLIB_LIB            "${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.so")
+        set(GOBJECT_LIB         "${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.so")
+        else()
+            find_library(GSTREAMER_CORE_LIB gstreamer-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+            find_library(GST_BASE_LIB gstbase-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+            find_library(GLIB_LIB glib-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+            find_library(GOBJECT_LIB gobject-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+        endif()
+
+        message(STATUS "GStreamer core: ${GSTREAMER_CORE_LIB}")
+        message(STATUS "GStreamer base: ${GST_BASE_LIB}")
+        message(STATUS "GLib: ${GLIB_LIB}")
+        message(STATUS "GObject: ${GOBJECT_LIB}")
+
+
+        set(GSTREAMER_LIBRARIES
+            ${GSTREAMER_CORE_LIB}
+            ${GST_BASE_LIB}
+            ${GOBJECT_LIB}
+            ${GLIB_LIB}
+        )
     endif()
 
-    # iOS sandbox and linker differences
-    add_definitions(
-        -DWASM_USE_MAP_32BIT=0
-        -DWASM_DISABLE_HW_BOUND_CHECK=1
-        -DWASM_DISABLE_PTHREAD_SETNAME=1
-    )
+    #-----------------------------------------------------------
+    # WebAssembly Micro Runtime (WAMR)
+    #-----------------------------------------------------------
+    set(WAMR_ROOT_DIR "${CMAKE_SOURCE_DIR}/external/wamr")
 
-    message(STATUS "Building WAMR for iOS (${WAMR_BUILD_PLATFORM}, target=${WAMR_BUILD_TARGET})")
-endif()
+    # Configure WAMR build features
+    # You can adjust these per-platform as needed
+    if(PLATFORM_LINUX)
+        set(WAMR_BUILD_PLATFORM "linux")
+        set(WAMR_BUILD_TARGET "X86_64")
+    elseif(PLATFORM_WINDOWS)
+        set(WAMR_BUILD_PLATFORM "windows")
+        set(WAMR_BUILD_TARGET "X86_64")
+    elseif(PLATFORM_MAC)
+        set(WAMR_BUILD_PLATFORM "darwin")
+        set(WAMR_BUILD_TARGET "X86_64")
+    elseif(PLATFORM_ANDROID)
+        set(WAMR_BUILD_PLATFORM "android")
 
-set(WAMR_BUILD_INTERP 1)
-set(WAMR_BUILD_FAST_INTERP 1)
-set(WAMR_BUILD_AOT 1)
-set(WAMR_BUILD_LIBC_BUILTIN 1)
-set(WAMR_BUILD_LIBC_WASI 1)
-set(WAMR_BUILD_SIMD 1)
+        # Set WAMR target based on ANDROID_ABI
+        if(ANDROID_ABI STREQUAL "arm64-v8a")
+            set(WAMR_BUILD_TARGET "AARCH64")
+        elseif(ANDROID_ABI STREQUAL "armeabi-v7a")
+            set(WAMR_BUILD_TARGET "ARM32")
+        elseif(ANDROID_ABI STREQUAL "x86")
+            set(WAMR_BUILD_TARGET "X86_32")
+        elseif(ANDROID_ABI STREQUAL "x86_64")
+            set(WAMR_BUILD_TARGET "X86_64")
+        else()
+            message(FATAL_ERROR "Unsupported ANDROID_ABI: ${ANDROID_ABI}")
+        endif()
 
-# Include WAMR build script
-include(${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
+        # Disable MAP_32BIT for Android builds
+        # add_definitions(-DWASM_USE_MAP_32BIT=0)
 
-# Define the static library target for WAMR
-add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE})
-target_include_directories(vmlib PUBLIC ${WAMR_RUNTIME_LIB_INCLUDE_DIRS})
+    elseif(PLATFORM_IOS)
+        set(WAMR_BUILD_PLATFORM "darwin")  # iOS uses Darwin base
 
-#-----------------------------------------------------------
-# Target setup
-#-----------------------------------------------------------
-file(GLOB SRC src/*.c src/*.cpp)
+        # Handle both simulator architectures
+        if(CMAKE_OSX_SYSROOT MATCHES "iphonesimulator")
+            if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+                set(WAMR_BUILD_TARGET "AARCH64")  # Apple Silicon simulator
+            elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
+                set(WAMR_BUILD_TARGET "X86_64")   # Intel simulator
+            else()
+                message(FATAL_ERROR "Unsupported simulator architecture: ${CMAKE_OSX_ARCHITECTURES}")
+            endif()
+        else()
+            # In case you ever build for real devices later
+            set(WAMR_BUILD_TARGET "AARCH64")
+        endif()
 
-if(PLATFORM_IOS)
-    add_executable(framebolt MACOSX_BUNDLE ${SRC})
-elseif(PLATFORM_ANDROID)
-    add_library(main SHARED ${SRC})
-elseif(PLATFORM_MAC)
-    add_executable(framebolt MACOSX_BUNDLE ${SRC})
-else()
-    add_executable(framebolt WIN32 ${SRC})
+        # iOS sandbox and linker differences
+        add_definitions(
+            -DWASM_USE_MAP_32BIT=0
+            -DWASM_DISABLE_HW_BOUND_CHECK=1
+            -DWASM_DISABLE_PTHREAD_SETNAME=1
+        )
+
+        message(STATUS "Building WAMR for iOS (${WAMR_BUILD_PLATFORM}, target=${WAMR_BUILD_TARGET})")
+    endif()
+
+    set(WAMR_BUILD_INTERP 1)
+    set(WAMR_BUILD_FAST_INTERP 1)
+    set(WAMR_BUILD_AOT 1)
+    set(WAMR_BUILD_LIBC_BUILTIN 1)
+    set(WAMR_BUILD_LIBC_WASI 1)
+    set(WAMR_BUILD_SIMD 1)
+
+    # Include WAMR build script
+    include(${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
+
+    # Define the static library target for WAMR
+    add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE})
+    target_include_directories(vmlib PUBLIC ${WAMR_RUNTIME_LIB_INCLUDE_DIRS})
+
+    #-----------------------------------------------------------
+    # Target setup
+    #-----------------------------------------------------------
+    file(GLOB SRC src/*.c src/*.cpp)
+
+    if(PLATFORM_IOS)
+        add_executable(framebolt MACOSX_BUNDLE ${SRC})
+    elseif(PLATFORM_ANDROID)
+        add_library(main SHARED ${SRC})
+    elseif(PLATFORM_MAC)
+        add_executable(framebolt MACOSX_BUNDLE ${SRC})
+    else()
+        add_executable(framebolt WIN32 ${SRC})
+    endif()
+
 endif()
 
 #-----------------------------------------------------------
@@ -234,19 +238,21 @@ if(PLATFORM_LINUX)
 elseif(PLATFORM_ANDROID)
     target_link_libraries(main PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf imgui)
     target_compile_definitions(main PRIVATE SDL_STATIC)
+elseif(PLATFORM_IOS)
+    target_link_libraries(framebolt PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf)
 else()
     target_link_libraries(framebolt PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf imgui)
 endif()
 
 # GStreamer dynamic everywhere except iOS
 if(PLATFORM_IOS)
-    message(STATUS "Static linking GStreamer on iOS")
-    target_link_libraries(framebolt PRIVATE
-        ${GSTREAMER_LIBRARY_DIRS}/libgstreamer-1.0.a
-        ${GSTREAMER_LIBRARY_DIRS}/libgstbase-1.0.a
-        ${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.a
-        ${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.a
-    )
+    # message(STATUS "Static linking GStreamer on iOS")
+    # target_link_libraries(framebolt PRIVATE
+    #     ${GSTREAMER_LIBRARY_DIRS}/libgstreamer-1.0.a
+    #     ${GSTREAMER_LIBRARY_DIRS}/libgstbase-1.0.a
+    #     ${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.a
+    #     ${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.a
+    # )
 elseif(PLATFORM_ANDROID)
     message(STATUS "Dynamic linking GStreamer")
     target_link_libraries(main PRIVATE ${GSTREAMER_LIBRARIES})
@@ -259,7 +265,7 @@ endif()
 # Link your app with the WAMR runtime
 if(PLATFORM_ANDROID)
     target_link_libraries(main PRIVATE vmlib)
-else()
+elseif(NOT PLATFORM_IOS)
     target_link_libraries(framebolt PRIVATE vmlib)
 endif()
 
