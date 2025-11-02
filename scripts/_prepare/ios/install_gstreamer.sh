@@ -2,10 +2,13 @@ GST_IOS_URL="https://gstreamer.freedesktop.org/data/pkg/ios/1.26.7/gstreamer-1.0
 echo "Downloading $GST_IOS_URL..."
 curl -L "$GST_IOS_URL" -o gstreamer-ios.pkg
 
-ls .
+echo "Expanding package..."
+pkgutil --expand-full gstreamer-ios.pkg extracted_pkg
 
-echo "Installing GStreamer iOS SDK..."
-sudo installer -pkg gstreamer-ios.pkg -target /
+echo "Extracting payload..."
+mkdir -p $HOME/gstreamer-ios
+cd $HOME/gstreamer-ios
+tar -xf ../extracted_pkg/gstreamer-1.0-devel-1.26.7-ios-universal.pkg/Payload
 
-ls /Library/Frameworks/GStreamer.framework/Versions/
-lipo -info /Library/Frameworks/GStreamer.framework/Versions/1.0/lib/libgstreamer-1.0.a
+echo "GStreamer extracted to: $HOME/gstreamer-ios"
+ls -R $HOME/gstreamer-ios | head -50
