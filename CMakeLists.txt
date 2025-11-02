@@ -64,7 +64,7 @@ if(NOT PLATFORM_IOS)
     )
 
     target_link_libraries(imgui PUBLIC SDL3::SDL3-static)
-
+endif()
     #-----------------------------------------------------------
     # GStreamer setup
     #-----------------------------------------------------------
@@ -90,7 +90,7 @@ if(NOT PLATFORM_IOS)
         if(PLATFORM_WINDOWS)
             set(GSTREAMER_ROOT "C:/gstreamer/1.0/msvc_x86_64")
             set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
-        elseif(PLATFORM_MAC)
+        elseif(PLATFORM_MAC OR PLATFORM_IOS)
             set(GSTREAMER_ROOT "/Library/Frameworks/GStreamer.framework/Versions/Current")
             set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
         elseif(PLATFORM_ANDROID)
@@ -134,7 +134,7 @@ if(NOT PLATFORM_IOS)
             ${GLIB_LIB}
         )
     endif()
-
+if(NOT PLATFORM_IOS)
     #-----------------------------------------------------------
     # WebAssembly Micro Runtime (WAMR)
     #-----------------------------------------------------------
@@ -246,13 +246,13 @@ endif()
 
 # GStreamer dynamic everywhere except iOS
 if(PLATFORM_IOS)
-    # message(STATUS "Static linking GStreamer on iOS")
-    # target_link_libraries(framebolt PRIVATE
-    #     ${GSTREAMER_LIBRARY_DIRS}/libgstreamer-1.0.a
-    #     ${GSTREAMER_LIBRARY_DIRS}/libgstbase-1.0.a
-    #     ${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.a
-    #     ${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.a
-    # )
+    message(STATUS "Static linking GStreamer on iOS")
+    target_link_libraries(framebolt PRIVATE
+        ${GSTREAMER_LIBRARY_DIRS}/libgstreamer-1.0.a
+        ${GSTREAMER_LIBRARY_DIRS}/libgstbase-1.0.a
+        ${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.a
+        ${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.a
+    )
 elseif(PLATFORM_ANDROID)
     message(STATUS "Dynamic linking GStreamer")
     target_link_libraries(main PRIVATE ${GSTREAMER_LIBRARIES})
