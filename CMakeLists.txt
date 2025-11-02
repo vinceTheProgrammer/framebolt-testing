@@ -88,7 +88,7 @@ endif()
         message(STATUS "Using GStreamer SDK .framework")
 
         # Tell CMake where the framework is
-        set(GSTREAMER_FRAMEWORK_DIR "$ENV{HOME}/gstreamer-ios")
+        set(GSTREAMER_FRAMEWORK_DIR "${CMAKE_SOURCE_DIR}/extracted_pkg/ios-framework-1.26.7-universal.pkg/Payload")
 
         find_library(GSTREAMER_FRAMEWORK GStreamer
             PATHS "${GSTREAMER_FRAMEWORK_DIR}"

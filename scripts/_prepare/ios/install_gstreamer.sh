@@ -25,20 +25,20 @@ fi
 
 echo "✅ Found Payload at: $PAYLOAD_PATH"
 
-DEST_DIR="$HOME/gstreamer-ios"
-mkdir -p "$DEST_DIR"
+# DEST_DIR="$HOME/gstreamer-ios"
+# mkdir -p "$DEST_DIR"
 
-if [ -d "$PAYLOAD_PATH" ]; then
-  echo "📁 Payload is a directory. Copying its contents..."
-  cp -R "$PAYLOAD_PATH"/* "$DEST_DIR/"
-else
-  echo "📦 Payload is a file. Extracting using tar..."
-  tar -xvf "$PAYLOAD_PATH" -C "$DEST_DIR"
-fi
+# if [ -d "$PAYLOAD_PATH" ]; then
+#   echo "📁 Payload is a directory. Copying its contents..."
+#   cp -R "$PAYLOAD_PATH"/* "$DEST_DIR/"
+# else
+#   echo "📦 Payload is a file. Extracting using tar..."
+#   tar -xvf "$PAYLOAD_PATH" -C "$DEST_DIR"
+# fi
 
-echo ""
-echo "✅ Extraction complete. Verifying structure..."
-ls -l "$DEST_DIR" || true
-echo ""
-echo "📂 Framework structure (depth 4):"
-find "$DEST_DIR" -maxdepth 4 -type d | grep -E "Framework|Versions" || true
+# echo ""
+# echo "✅ Extraction complete. Verifying structure..."
+# ls -l "$DEST_DIR" || true
+# echo ""
+# echo "📂 Framework structure (depth 4):"
+# find "$DEST_DIR" -maxdepth 4 -type d | grep -E "Framework|Versions" || true
