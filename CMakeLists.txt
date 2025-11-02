@@ -84,6 +84,21 @@ endif()
         set(GSTREAMER_LIBRARIES ${GSTREAMER_LIBRARIES})
         include_directories(${GSTREAMER_INCLUDE_DIRS})
         link_directories(${GSTREAMER_LIBRARY_DIRS})
+    elseif(PLATFORM_IOS)
+        message(STATUS "Using GStreamer SDK .framework")
+
+        # Tell CMake where the framework is
+        set(GSTREAMER_FRAMEWORK_DIR "$ENV{HOME}/gstreamer-ios")
+
+        find_library(GSTREAMER_FRAMEWORK GStreamer
+            PATHS "${GSTREAMER_FRAMEWORK_DIR}"
+            PATH_SUFFIXES ""
+            NO_DEFAULT_PATH
+        )
+
+        if(NOT GSTREAMER_FRAMEWORK)
+            message(FATAL_ERROR "GStreamer.framework not found in ${GSTREAMER_FRAMEWORK_DIR}")
+        endif()
     else()
         message(STATUS "Using bundled GStreamer SDK")
 
@@ -93,34 +108,6 @@ endif()
         elseif(PLATFORM_MAC)
             set(GSTREAMER_ROOT "/Library/Frameworks/GStreamer.framework/Versions/Current")
             set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
-        elseif(PLATFORM_IOS)
-            message(STATUS "🔍 Searching for extracted GStreamer iOS framework...")
-
-            # Look for the unpacked iOS SDK under the home directory
-            file(GLOB_RECURSE GSTREAMER_FRAMEWORK_PATH
-                "$ENV{HOME}/gstreamer-ios/*/Payload/GStreamer.framework"
-                "$ENV{HOME}/gstreamer-ios/GStreamer.framework"
-            )
-
-            if(NOT GSTREAMER_FRAMEWORK_PATH)
-                # Fallback for alternate layouts (some .pkg extractors skip Payload/)
-                file(GLOB_RECURSE GSTREAMER_FRAMEWORK_PATH
-                    "$ENV{HOME}/gstreamer-ios/**/*.framework"
-                )
-            endif()
-
-            if(GSTREAMER_FRAMEWORK_PATH)
-                list(GET GSTREAMER_FRAMEWORK_PATH 0 GSTREAMER_ROOT)
-                message(STATUS "✅ Found GStreamer iOS Framework at: ${GSTREAMER_ROOT}")
-            else()
-                message(STATUS "❌ Directory listing of gstreamer-ios:")
-                execute_process(COMMAND ls -R "$ENV{HOME}/gstreamer-ios" RESULT_VARIABLE ls_result OUTPUT_VARIABLE ls_output ERROR_VARIABLE ls_output)
-                message(STATUS "${ls_output}")
-                message(FATAL_ERROR "❌ GStreamer iOS framework not found under $ENV{HOME}/gstreamer-ios/")
-            endif()
-
-            # Standard iOS framework layout
-            set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/Libraries")
         elseif(PLATFORM_ANDROID)
             set(GSTREAMER_ROOT "${CMAKE_SOURCE_DIR}/android-project/app/src/main/jni/gstreamer")
             set(GSTREAMER_LIBRARY_DIRS "${CMAKE_SOURCE_DIR}/android-project/app/libs/${ANDROID_ABI}")
@@ -132,7 +119,9 @@ endif()
             set(GSTREAMER_INCLUDE_DIRS
                 "${GSTREAMER_ROOT}/Headers"
                 "${GSTREAMER_ROOT}/Headers/gstreamer-1.0"
+                "${GSTREAMER_ROOT}/Headers/gst"
                 "${GSTREAMER_ROOT}/Headers/glib-2.0"
+                "${GSTREAMER_ROOT}/Headers/gobject"
             )
         else()
             set(GSTREAMER_INCLUDE_DIRS
@@ -151,11 +140,6 @@ endif()
             set(GST_BASE_LIB        "${GSTREAMER_LIBRARY_DIRS}/libgstbase-1.0.so")
             set(GLIB_LIB            "${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.so")
             set(GOBJECT_LIB         "${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.so")
-        elseif(PLATFORM_IOS)
-            set(GSTREAMER_CORE_LIB  "${GSTREAMER_LIBRARY_DIRS}/libgstreamer-1.0.a")
-            set(GST_BASE_LIB        "${GSTREAMER_LIBRARY_DIRS}/libgstbase-1.0.a")
-            set(GLIB_LIB            "${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.a")
-            set(GOBJECT_LIB         "${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.a")
         else()
             find_library(GSTREAMER_CORE_LIB gstreamer-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
             find_library(GST_BASE_LIB gstbase-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
@@ -288,12 +272,13 @@ endif()
 
 # GStreamer dynamic everywhere except iOS
 if(PLATFORM_IOS)
-    message(STATUS "Static linking GStreamer on iOS")
+    message(STATUS "Dynamic linking GStreamer .framework (iOS)")
     target_link_libraries(framebolt PRIVATE
-        ${GSTREAMER_LIBRARY_DIRS}/libgstreamer-1.0.a
-        ${GSTREAMER_LIBRARY_DIRS}/libgstbase-1.0.a
-        ${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.a
-        ${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.a
+        ${GSTREAMER_FRAMEWORK}
+    )
+    # Include headers
+    target_include_directories(framebolt PRIVATE
+        "${GSTREAMER_FRAMEWORK_DIR}/GStreamer.framework/Headers"
     )
 elseif(PLATFORM_ANDROID)
     message(STATUS "Dynamic linking GStreamer")
