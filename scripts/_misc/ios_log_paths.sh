@@ -11,7 +11,7 @@ if [ -d "$HOME/gstreamer-ios" ]; then
 
   echo ""
   echo "📂 Recursive structure (depth 3):"
-  find "$HOME/gstreamer-ios" -maxdepth 3 -type d | sed 's/^/  📂 /'
+  find "$HOME/gstreamer-ios" -maxdepth 10 -type d | sed 's/^/  📂 /'
 
   echo ""
   echo "🔎 Searching for key framework and lib files:"
