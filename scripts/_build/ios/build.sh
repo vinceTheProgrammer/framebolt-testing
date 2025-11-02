@@ -15,5 +15,5 @@ cmake -S . -B build-ios -G Xcode \
 # Build
 set -euxo pipefail
 cmake --build build-ios --config Debug --verbose \
-    tee build-ios.log
+    | tee build-ios.log
 echo "✅ Build completed successfully"
