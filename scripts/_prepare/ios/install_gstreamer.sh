@@ -10,45 +10,49 @@ pkgutil --expand-full gstreamer-ios.pkg extracted_pkg
 echo "🧭 Listing top-level contents of extracted_pkg:"
 ls -l extracted_pkg || true
 echo ""
-echo "📂 Full directory tree (first few levels):"
-find extracted_pkg -maxdepth 3 -type f -print || true
+echo "📂 Full directory tree (up to depth 4):"
+find extracted_pkg -maxdepth 4 -print || true
 
 echo ""
-echo "🔍 Searching for Payload file..."
-PAYLOAD_PATH=$(find extracted_pkg -name Payload -type f | head -n 1 || true)
+echo "🔍 Searching for Payload (file or directory)..."
+PAYLOAD_PATH=$(find extracted_pkg -name Payload -type f -o -type d | head -n 1 || true)
 
 if [ -z "$PAYLOAD_PATH" ]; then
-  echo "❌ No Payload file found. Printing expanded_pkg contents for debugging..."
-  find extracted_pkg -maxdepth 5 -print
+  echo "❌ No Payload found. Dumping directory contents for debugging:"
+  find extracted_pkg -maxdepth 6 -print
   exit 1
 fi
 
-echo "✅ Found Payload file at: $PAYLOAD_PATH"
-echo "📦 Extracting Payload to \$HOME/gstreamer-ios..."
-mkdir -p "$HOME/gstreamer-ios"
-cd "$HOME/gstreamer-ios"
-tar -xvf "$GITHUB_WORKSPACE/$PAYLOAD_PATH" || {
-  echo "❌ Extraction failed. Printing directory listing for context..."
-  ls -R "$GITHUB_WORKSPACE/extracted_pkg"
-  exit 1
-}
+echo "✅ Found Payload at: $PAYLOAD_PATH"
+
+# Create destination
+DEST_DIR="$HOME/gstreamer-ios"
+mkdir -p "$DEST_DIR"
+
+# If Payload is a directory, copy it.
+if [ -d "$PAYLOAD_PATH" ]; then
+  echo "📁 Payload is a directory. Copying its contents..."
+  cp -R "$PAYLOAD_PATH"/* "$DEST_DIR/"
+else
+  echo "📦 Payload is a file. Extracting using tar..."
+  tar -xvf "$GITHUB_WORKSPACE/$PAYLOAD_PATH" -C "$DEST_DIR"
+fi
 
 echo ""
-echo "✅ Extraction complete. GStreamer contents at:"
-ls -l "$HOME/gstreamer-ios" || true
-
+echo "✅ Extraction complete. Verifying structure..."
+ls -l "$DEST_DIR" || true
 echo ""
-echo "📂 Framework structure (showing first few levels):"
-find "$HOME/gstreamer-ios/Library/Frameworks" -maxdepth 4 -print || true
+echo "📂 Framework structure (depth 4):"
+find "$DEST_DIR/Library/Frameworks" -maxdepth 4 -print || true
 
-# Optional: check for libs and headers
+# Optional sanity checks
 echo ""
-echo "🔎 Checking for static libraries (*.a):"
-find "$HOME/gstreamer-ios" -name "*.a" | head -20 || true
+echo "🔎 Checking for static libs (*.a):"
+find "$DEST_DIR" -name "*.a" | head -20 || true
 
 echo ""
 echo "🔎 Checking for headers:"
-find "$HOME/gstreamer-ios" -name "gstreamer*" -type d | head -10 || true
+find "$DEST_DIR" -name "gstreamer*" -type d | head -10 || true
 
 echo ""
-echo "🎯 GStreamer iOS SDK setup complete at: $HOME/gstreamer-ios"
+echo "🎯 GStreamer iOS SDK successfully extracted to: $DEST_DIR"
