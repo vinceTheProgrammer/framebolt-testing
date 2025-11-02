@@ -94,13 +94,33 @@ endif()
             set(GSTREAMER_ROOT "/Library/Frameworks/GStreamer.framework/Versions/Current")
             set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
         elseif(PLATFORM_IOS)
-            file(GLOB GSTREAMER_PKG_DIR "$ENV{HOME}/gstreamer-ios/ios-framework-*-universal.pkg")
-            if(GSTREAMER_PKG_DIR)
-                set(GSTREAMER_ROOT "${GSTREAMER_PKG_DIR}/Payload/GStreamer.framework")
-                set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/Libraries")
+            message(STATUS "🔍 Searching for extracted GStreamer iOS framework...")
+
+            # Look for the unpacked iOS SDK under the home directory
+            file(GLOB_RECURSE GSTREAMER_FRAMEWORK_PATH
+                "$ENV{HOME}/gstreamer-ios/*/Payload/GStreamer.framework"
+                "$ENV{HOME}/gstreamer-ios/GStreamer.framework"
+            )
+
+            if(NOT GSTREAMER_FRAMEWORK_PATH)
+                # Fallback for alternate layouts (some .pkg extractors skip Payload/)
+                file(GLOB_RECURSE GSTREAMER_FRAMEWORK_PATH
+                    "$ENV{HOME}/gstreamer-ios/**/*.framework"
+                )
+            endif()
+
+            if(GSTREAMER_FRAMEWORK_PATH)
+                list(GET GSTREAMER_FRAMEWORK_PATH 0 GSTREAMER_ROOT)
+                message(STATUS "✅ Found GStreamer iOS Framework at: ${GSTREAMER_ROOT}")
             else()
+                message(STATUS "❌ Directory listing of gstreamer-ios:")
+                execute_process(COMMAND ls -R "$ENV{HOME}/gstreamer-ios" RESULT_VARIABLE ls_result OUTPUT_VARIABLE ls_output ERROR_VARIABLE ls_output)
+                message(STATUS "${ls_output}")
                 message(FATAL_ERROR "❌ GStreamer iOS framework not found under $ENV{HOME}/gstreamer-ios/")
             endif()
+
+            # Standard iOS framework layout
+            set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/Libraries")
         elseif(PLATFORM_ANDROID)
             set(GSTREAMER_ROOT "${CMAKE_SOURCE_DIR}/android-project/app/src/main/jni/gstreamer")
             set(GSTREAMER_LIBRARY_DIRS "${CMAKE_SOURCE_DIR}/android-project/app/libs/${ANDROID_ABI}")

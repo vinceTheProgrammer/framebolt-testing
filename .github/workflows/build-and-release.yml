@@ -84,6 +84,7 @@ jobs:
             prepare: |
               ./scripts/_prepare/common/prepare_external_repos.sh
               ./scripts/_prepare/ios/install_gstreamer.sh
+              ./scripts/_prepare/ios/ios_log_paths.sh
             build: |
               ./scripts/_build/ios/build.sh
             finalize: |
