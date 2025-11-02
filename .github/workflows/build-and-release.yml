@@ -83,8 +83,7 @@ jobs:
             os: macos-latest
             prepare: |
               ./scripts/_prepare/common/prepare_external_repos.sh
-              ./scripts/_prepare/ios/download_gstreamer.sh
-              ./scripts/_prepare/macos/install_gstreamer.sh
+              ./scripts/_prepare/ios/install_gstreamer.sh
             build: |
               ./scripts/_build/ios/build.sh
             finalize: |
