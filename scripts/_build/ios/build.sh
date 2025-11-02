@@ -13,4 +13,7 @@ cmake -S . -B build-ios -G Xcode \
     -DGSTREAMER_ROOT="$GST_IOS_DIR"
 
 # Build
-cmake --build build-ios --config Debug
+set -euxo pipefail
+cmake --build build-ios --config Debug --verbose \
+    tee build-ios.log
+echo "✅ Build completed successfully"

@@ -102,6 +102,15 @@ jobs:
       - name: Build ${{ matrix.name }}
         run: ${{ matrix.build }}
 
+      - name: On failure, dump diagnostics
+        if: failure()
+        run: |
+          echo "❌ Build failed. Checking logs..."
+          ls -R build-ios/build/SDL3-static.build/Debug-iphonesimulator || true
+          tail -n 200 build-ios.log || true
+          echo "--- DerivedData sizes ---"
+          du -sh ~/Library/Developer/Xcode/DerivedData || true
+
       - name: Finalize Build ${{ matrix.name }}
         run: ${{ matrix.finalize }}
 
