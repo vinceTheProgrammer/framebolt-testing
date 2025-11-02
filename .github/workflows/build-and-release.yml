@@ -67,7 +67,6 @@ jobs:
             os: ubuntu-latest
             prepare: |
               ./scripts/_prepare/common/prepare_external_repos.sh
-              ./scripts/_prepare/android/prepare.sh
               ./scripts/_prepare/android/copy-android-gstreamer-libs.sh
               ./scripts/_prepare/android/copy_assets.sh
             build: |

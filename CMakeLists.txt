@@ -211,6 +211,8 @@ if(NOT PLATFORM_IOS)
     add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE})
     target_include_directories(vmlib PUBLIC ${WAMR_RUNTIME_LIB_INCLUDE_DIRS})
 
+    endif()
+
     #-----------------------------------------------------------
     # Target setup
     #-----------------------------------------------------------
@@ -225,8 +227,6 @@ if(NOT PLATFORM_IOS)
     else()
         add_executable(framebolt WIN32 ${SRC})
     endif()
-
-endif()
 
 #-----------------------------------------------------------
 # Linking rules
