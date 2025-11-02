@@ -94,8 +94,13 @@ endif()
             set(GSTREAMER_ROOT "/Library/Frameworks/GStreamer.framework/Versions/Current")
             set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
         elseif(PLATFORM_IOS)
-            set(GSTREAMER_ROOT "$ENV{HOME}/gstreamer-ios/Library/Frameworks/GStreamer.framework/Versions/1.0")
-            set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
+            file(GLOB GSTREAMER_PKG_DIR "$ENV{HOME}/gstreamer-ios/ios-framework-*-universal.pkg")
+            if(GSTREAMER_PKG_DIR)
+                set(GSTREAMER_ROOT "${GSTREAMER_PKG_DIR}/Payload/GStreamer.framework")
+                set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/Libraries")
+            else()
+                message(FATAL_ERROR "❌ GStreamer iOS framework not found under $ENV{HOME}/gstreamer-ios/")
+            endif()
         elseif(PLATFORM_ANDROID)
             set(GSTREAMER_ROOT "${CMAKE_SOURCE_DIR}/android-project/app/src/main/jni/gstreamer")
             set(GSTREAMER_LIBRARY_DIRS "${CMAKE_SOURCE_DIR}/android-project/app/libs/${ANDROID_ABI}")
@@ -103,11 +108,20 @@ endif()
 
         message(STATUS "GStreamer library dirs: ${GSTREAMER_LIBRARY_DIRS}")
 
-        set(GSTREAMER_INCLUDE_DIRS
-            "${GSTREAMER_ROOT}/include/gstreamer-1.0"
-            "${GSTREAMER_ROOT}/include/glib-2.0"
-            "${GSTREAMER_ROOT}/lib/glib-2.0/include"
-        )
+        if(PLATFORM_IOS)
+            set(GSTREAMER_INCLUDE_DIRS
+                "${GSTREAMER_ROOT}/Headers"
+                "${GSTREAMER_ROOT}/Headers/gstreamer-1.0"
+                "${GSTREAMER_ROOT}/Headers/glib-2.0"
+            )
+        else()
+            set(GSTREAMER_INCLUDE_DIRS
+                "${GSTREAMER_ROOT}/include/gstreamer-1.0"
+                "${GSTREAMER_ROOT}/include/glib-2.0"
+                "${GSTREAMER_ROOT}/lib/glib-2.0/include"
+            )
+        endif()
+
         include_directories(${GSTREAMER_INCLUDE_DIRS})
         link_directories(${GSTREAMER_LIBRARY_DIRS})
 
