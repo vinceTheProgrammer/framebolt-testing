@@ -211,22 +211,22 @@ if(NOT PLATFORM_IOS)
     add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE})
     target_include_directories(vmlib PUBLIC ${WAMR_RUNTIME_LIB_INCLUDE_DIRS})
 
-    endif()
+endif()
 
-    #-----------------------------------------------------------
-    # Target setup
-    #-----------------------------------------------------------
-    file(GLOB SRC src/*.c src/*.cpp)
+#-----------------------------------------------------------
+# Target setup
+#-----------------------------------------------------------
+file(GLOB SRC src/*.c src/*.cpp)
 
-    if(PLATFORM_IOS)
-        add_executable(framebolt MACOSX_BUNDLE ${SRC})
-    elseif(PLATFORM_ANDROID)
-        add_library(main SHARED ${SRC})
-    elseif(PLATFORM_MAC)
-        add_executable(framebolt MACOSX_BUNDLE ${SRC})
-    else()
-        add_executable(framebolt WIN32 ${SRC})
-    endif()
+if(PLATFORM_IOS)
+    add_executable(framebolt MACOSX_BUNDLE ${SRC})
+elseif(PLATFORM_ANDROID)
+    add_library(main SHARED ${SRC})
+elseif(PLATFORM_MAC)
+    add_executable(framebolt MACOSX_BUNDLE ${SRC})
+else()
+    add_executable(framebolt WIN32 ${SRC})
+endif()
 
 #-----------------------------------------------------------
 # Linking rules
