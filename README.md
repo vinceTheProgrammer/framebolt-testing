@@ -36,3 +36,6 @@ cmake -S . -B build-ios -G Xcode \
 cmake --build build-ios --config Debug
 ```
 I believe this builds an app bundle debug build targeted for an iphone simulator. I guess you need certs setup or something to build targeted for a physical device(?)
+
+# Other
+find . -type f -name '*.sh' -exec chmod +x {} +
