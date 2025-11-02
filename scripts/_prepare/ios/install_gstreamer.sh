@@ -3,4 +3,4 @@ echo "Downloading $GST_IOS_URL..."
 curl -L "$GST_IOS_URL" -o gstreamer-ios.tar.xz
 tar -xf gstreamer-ios.tar.xz
 ls .
-sudo installer -pkg ios-framework-1.26.7-universal.pkg -target /
+sudo installer -pkg ./ios-framework-1.26.7-universal.pkg -target /
