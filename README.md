@@ -39,3 +39,26 @@ I believe this builds an app bundle debug build targeted for an iphone simulator
 
 # Other
 find . -type f -name '*.sh' -exec chmod +x {} +
+
+xcrun simctl list devices
+xcrun simctl boot "iPhone 15 Pro"
+open -a Simulator
+xcrun simctl install booted build-ios/Debug/framebolt.app
+xcrun simctl launch booted com.vinceTheProgrammer.framebolt
+
+
+xcrun simctl uninstall booted com.vinceTheProgrammer.framebolt
+xcrun simctl erase all
+
+
+
+# ci draft
+# Choose a simulator (first booted or default)
+DEVICE=$(xcrun simctl list devices | grep -m1 "iPhone 15" | awk -F '[()]' '{print $2}')
+
+# Boot it (safe even if already running)
+xcrun simctl boot "$DEVICE" || true
+
+# Install and launch
+xcrun simctl install booted build-ios/Debug/framebolt.app
+xcrun simctl launch booted com.vinceTheProgrammer.framebolt
