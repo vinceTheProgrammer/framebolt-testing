@@ -90,11 +90,7 @@ endif()
         # Tell CMake where the framework is
         set(GSTREAMER_FRAMEWORK_DIR "${CMAKE_SOURCE_DIR}/extracted_pkg/ios-framework-1.26.7-universal.pkg/Payload")
 
-        find_library(GSTREAMER_FRAMEWORK GStreamer
-            PATHS "${GSTREAMER_FRAMEWORK_DIR}"
-            PATH_SUFFIXES ""
-            NO_DEFAULT_PATH
-        )
+        set(GSTREAMER_FRAMEWORK "${GSTREAMER_FRAMEWORK_DIR}/GStreamer.framework")
 
         if(NOT GSTREAMER_FRAMEWORK)
             message(FATAL_ERROR "GStreamer.framework not found in ${GSTREAMER_FRAMEWORK_DIR}")
