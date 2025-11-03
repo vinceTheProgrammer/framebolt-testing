@@ -269,8 +269,10 @@ endif()
 # GStreamer dynamic everywhere except iOS
 if(PLATFORM_IOS)
     message(STATUS "Dynamic linking GStreamer .framework (iOS)")
+    find_library(ICONV_LIB iconv)
     target_link_libraries(framebolt PRIVATE
         ${GSTREAMER_FRAMEWORK}
+        ${ICONV_LIB}
     )
     # Include headers
     target_include_directories(framebolt PRIVATE
