@@ -59,6 +59,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+#if defined(__ANDROID__)
+    const char *font_path = "DejaVuSans.ttf";
+#else
     // Allocate a new string for font_path
     const char *font_name = "DejaVuSans.ttf";
     size_t path_len = strlen(base_path) + strlen(font_name) + 1;
@@ -74,8 +77,8 @@ int main(int argc, char *argv[])
     // Build the full path string
     strcpy(font_path, base_path);
     strcat(font_path, font_name);
+#endif
 
-    // --- Load font (use bundled font or system one) ---
     TTF_Font *font = TTF_OpenFont(font_path, 32);
     if (!font) {
         SDL_Log("Failed to load font: %s", SDL_GetError());
