@@ -1,6 +1,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <SDL3/SDL_log.h>
 #include <gst/gst.h>
 #include <stdio.h>
 
@@ -21,6 +22,8 @@ int main(int argc, char *argv[])
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
         return 1;
     }
+
+    SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
 
     if (!TTF_Init()) {
         SDL_Log("TTF_Init failed: %s", SDL_GetError());
@@ -50,36 +53,42 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Get the base path where the app is running
-    char *base_path = SDL_GetBasePath();
-    if (!base_path) {
-        printf("SDL_GetBasePath Error: %s\n", SDL_GetError());
-        TTF_Quit();
-        SDL_Quit();
-        return 1;
-    }
+    #if defined(__ANDROID__)
+        SDL_IOStream *io = SDL_IOFromFile("DejaVuSans.ttf", "rb");
+        if (!io) {
+            SDL_Log("failed to call SDL_IOFromFile: %s\n", SDL_GetError());
+        }
 
-#if defined(__ANDROID__)
-    const char *font_path = "DejaVuSans.ttf";
-#else
-    // Allocate a new string for font_path
-    const char *font_name = "DejaVuSans.ttf";
-    size_t path_len = strlen(base_path) + strlen(font_name) + 1;
-    char *font_path = malloc(path_len);
-    if (!font_path) {
-        printf("malloc failed\n");
-        SDL_free(base_path);
-        TTF_Quit();
-        SDL_Quit();
-        return 1;
-    }
+        TTF_Font *font = TTF_OpenFontIO(io, true, 32);
+    #else
+        // Get the base path where the app is running
+        char *base_path = SDL_GetBasePath();
+        if (!base_path) {
+            SDL_Log("SDL_GetBasePath Error: %s\n", SDL_GetError());
+            TTF_Quit();
+            SDL_Quit();
+            return 1;
+        }
 
-    // Build the full path string
-    strcpy(font_path, base_path);
-    strcat(font_path, font_name);
-#endif
+        // Allocate a new string for font_path
+        const char *font_name = "DejaVuSans.ttf";
+        size_t path_len = strlen(base_path) + strlen(font_name) + 1;
+        char *font_path = malloc(path_len);
+        if (!font_path) {
+            SDL_Log("malloc failed\n");
+            SDL_free(base_path);
+            TTF_Quit();
+            SDL_Quit();
+            return 1;
+        }
 
-    TTF_Font *font = TTF_OpenFont(font_path, 32);
+        // Build the full path string
+        strcpy(font_path, base_path);
+        strcat(font_path, font_name);
+
+        TTF_Font *font = TTF_OpenFont(font_path, 32);
+    #endif
+
     if (!font) {
         SDL_Log("Failed to load font: %s", SDL_GetError());
         SDL_DestroyRenderer(renderer);
@@ -101,6 +110,7 @@ int main(int argc, char *argv[])
         SDL_Quit();
         return 1;
     }
+
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
 
     SDL_FRect dst_rect = {
