@@ -39,123 +39,115 @@ set(SDL_STATIC ON CACHE BOOL "" FORCE)
 # Use vendored builds for SDL3 and SDL_ttf
 add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(external/SDL_ttf EXCLUDE_FROM_ALL)
-
-if(NOT PLATFORM_IOS)
-
-    #-----------------------------------------------------------
-    # Dear ImGui setup
-    #-----------------------------------------------------------
-    set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/external/imgui")
-
-    set(IMGUI_SOURCES
-        ${IMGUI_DIR}/imgui.cpp
-        ${IMGUI_DIR}/imgui_draw.cpp
-        ${IMGUI_DIR}/imgui_tables.cpp
-        ${IMGUI_DIR}/imgui_widgets.cpp
-        ${IMGUI_DIR}/imgui_demo.cpp # optional, but useful
-        ${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
-        ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+include_directories(
+    ${CMAKE_SOURCE_DIR}/external/SDL/include
+    ${CMAKE_SOURCE_DIR}/external/SDL_ttf/include
     )
 
-    add_library(imgui STATIC ${IMGUI_SOURCES})
-    target_include_directories(imgui PUBLIC
-        ${IMGUI_DIR}
-        ${IMGUI_DIR}/backends
-    )
+#-----------------------------------------------------------
+# Dear ImGui setup
+#-----------------------------------------------------------
+file(GLOB IMGUI_SRC
+    external/imgui/*.cpp
+    external/imgui/backends/imgui_impl_sdlrenderer3.cpp
+    external/imgui/backends/imgui_impl_sdl3.cpp
+    external/imgui/backends/imgui_impl_sdlgpu3.cpp
+    external/imgui/misc/cpp/imgui_stdlib.*
+)
+add_library(imgui STATIC ${IMGUI_SRC})
+target_include_directories(imgui PUBLIC external/imgui external/imgui/backends)
 
-    target_link_libraries(imgui PUBLIC SDL3::SDL3-static)
+#-----------------------------------------------------------
+# GStreamer setup
+#-----------------------------------------------------------
+if(PLATFORM_LINUX)
+    option(USE_SYSTEM_GSTREAMER "Use system GStreamer instead of bundled SDK" ON)
+else()
+    option(USE_SYSTEM_GSTREAMER "Use system GStreamer instead of bundled SDK" OFF)
 endif()
-    #-----------------------------------------------------------
-    # GStreamer setup
-    #-----------------------------------------------------------
-    if(PLATFORM_LINUX)
-        option(USE_SYSTEM_GSTREAMER "Use system GStreamer instead of bundled SDK" ON)
-    else()
-        option(USE_SYSTEM_GSTREAMER "Use system GStreamer instead of bundled SDK" OFF)
+
+set(GSTREAMER_MIN_VERSION "1.18")
+
+if(USE_SYSTEM_GSTREAMER)
+    message(STATUS "Using system-installed GStreamer")
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0>=${GSTREAMER_MIN_VERSION})
+    set(GSTREAMER_INCLUDE_DIRS ${GSTREAMER_INCLUDE_DIRS} ${GSTREAMER_INCLUDE_DIRS})
+    set(GSTREAMER_LIBRARIES ${GSTREAMER_LIBRARIES})
+    include_directories(${GSTREAMER_INCLUDE_DIRS})
+    link_directories(${GSTREAMER_LIBRARY_DIRS})
+elseif(PLATFORM_IOS)
+    message(STATUS "Using GStreamer SDK .framework")
+
+    # Tell CMake where the framework is
+    set(GSTREAMER_FRAMEWORK_DIR "${CMAKE_SOURCE_DIR}/extracted_pkg/ios-framework-1.26.7-universal.pkg/Payload")
+
+    set(GSTREAMER_FRAMEWORK "${GSTREAMER_FRAMEWORK_DIR}/GStreamer.framework")
+
+    if(NOT GSTREAMER_FRAMEWORK)
+        message(FATAL_ERROR "GStreamer.framework not found in ${GSTREAMER_FRAMEWORK_DIR}")
+    endif()
+else()
+    message(STATUS "Using bundled GStreamer SDK")
+
+    if(PLATFORM_WINDOWS)
+        set(GSTREAMER_ROOT "C:/gstreamer/1.0/msvc_x86_64")
+        set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
+    elseif(PLATFORM_MAC)
+        set(GSTREAMER_ROOT "/Library/Frameworks/GStreamer.framework/Versions/Current")
+        set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
+    elseif(PLATFORM_ANDROID)
+        set(GSTREAMER_ROOT "${CMAKE_SOURCE_DIR}/android-project/app/src/main/jni/gstreamer")
+        set(GSTREAMER_LIBRARY_DIRS "${CMAKE_SOURCE_DIR}/android-project/app/libs/${ANDROID_ABI}")
     endif()
 
-    set(GSTREAMER_MIN_VERSION "1.18")
+    message(STATUS "GStreamer library dirs: ${GSTREAMER_LIBRARY_DIRS}")
 
-    if(USE_SYSTEM_GSTREAMER)
-        message(STATUS "Using system-installed GStreamer")
-        find_package(PkgConfig REQUIRED)
-        pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0>=${GSTREAMER_MIN_VERSION})
-        set(GSTREAMER_INCLUDE_DIRS ${GSTREAMER_INCLUDE_DIRS} ${GSTREAMER_INCLUDE_DIRS})
-        set(GSTREAMER_LIBRARIES ${GSTREAMER_LIBRARIES})
-        include_directories(${GSTREAMER_INCLUDE_DIRS})
-        link_directories(${GSTREAMER_LIBRARY_DIRS})
-    elseif(PLATFORM_IOS)
-        message(STATUS "Using GStreamer SDK .framework")
-
-        # Tell CMake where the framework is
-        set(GSTREAMER_FRAMEWORK_DIR "${CMAKE_SOURCE_DIR}/extracted_pkg/ios-framework-1.26.7-universal.pkg/Payload")
-
-        set(GSTREAMER_FRAMEWORK "${GSTREAMER_FRAMEWORK_DIR}/GStreamer.framework")
-
-        if(NOT GSTREAMER_FRAMEWORK)
-            message(FATAL_ERROR "GStreamer.framework not found in ${GSTREAMER_FRAMEWORK_DIR}")
-        endif()
+    if(PLATFORM_IOS)
+        set(GSTREAMER_INCLUDE_DIRS
+            "${GSTREAMER_ROOT}/Headers"
+            "${GSTREAMER_ROOT}/Headers/gstreamer-1.0"
+            "${GSTREAMER_ROOT}/Headers/gst"
+            "${GSTREAMER_ROOT}/Headers/glib-2.0"
+            "${GSTREAMER_ROOT}/Headers/gobject"
+        )
     else()
-        message(STATUS "Using bundled GStreamer SDK")
-
-        if(PLATFORM_WINDOWS)
-            set(GSTREAMER_ROOT "C:/gstreamer/1.0/msvc_x86_64")
-            set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
-        elseif(PLATFORM_MAC)
-            set(GSTREAMER_ROOT "/Library/Frameworks/GStreamer.framework/Versions/Current")
-            set(GSTREAMER_LIBRARY_DIRS "${GSTREAMER_ROOT}/lib")
-        elseif(PLATFORM_ANDROID)
-            set(GSTREAMER_ROOT "${CMAKE_SOURCE_DIR}/android-project/app/src/main/jni/gstreamer")
-            set(GSTREAMER_LIBRARY_DIRS "${CMAKE_SOURCE_DIR}/android-project/app/libs/${ANDROID_ABI}")
-        endif()
-
-        message(STATUS "GStreamer library dirs: ${GSTREAMER_LIBRARY_DIRS}")
-
-        if(PLATFORM_IOS)
-            set(GSTREAMER_INCLUDE_DIRS
-                "${GSTREAMER_ROOT}/Headers"
-                "${GSTREAMER_ROOT}/Headers/gstreamer-1.0"
-                "${GSTREAMER_ROOT}/Headers/gst"
-                "${GSTREAMER_ROOT}/Headers/glib-2.0"
-                "${GSTREAMER_ROOT}/Headers/gobject"
-            )
-        else()
-            set(GSTREAMER_INCLUDE_DIRS
-                "${GSTREAMER_ROOT}/include/gstreamer-1.0"
-                "${GSTREAMER_ROOT}/include/glib-2.0"
-                "${GSTREAMER_ROOT}/lib/glib-2.0/include"
-            )
-        endif()
-
-        include_directories(${GSTREAMER_INCLUDE_DIRS})
-        link_directories(${GSTREAMER_LIBRARY_DIRS})
-
-        # Explicitly find the core GStreamer and GLib libs
-        if(PLATFORM_ANDROID)
-            set(GSTREAMER_CORE_LIB  "${GSTREAMER_LIBRARY_DIRS}/libgstreamer-1.0.so")
-            set(GST_BASE_LIB        "${GSTREAMER_LIBRARY_DIRS}/libgstbase-1.0.so")
-            set(GLIB_LIB            "${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.so")
-            set(GOBJECT_LIB         "${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.so")
-        else()
-            find_library(GSTREAMER_CORE_LIB gstreamer-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
-            find_library(GST_BASE_LIB gstbase-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
-            find_library(GLIB_LIB glib-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
-            find_library(GOBJECT_LIB gobject-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
-        endif()
-
-        message(STATUS "GStreamer core: ${GSTREAMER_CORE_LIB}")
-        message(STATUS "GStreamer base: ${GST_BASE_LIB}")
-        message(STATUS "GLib: ${GLIB_LIB}")
-        message(STATUS "GObject: ${GOBJECT_LIB}")
-
-
-        set(GSTREAMER_LIBRARIES
-            ${GSTREAMER_CORE_LIB}
-            ${GST_BASE_LIB}
-            ${GOBJECT_LIB}
-            ${GLIB_LIB}
+        set(GSTREAMER_INCLUDE_DIRS
+            "${GSTREAMER_ROOT}/include/gstreamer-1.0"
+            "${GSTREAMER_ROOT}/include/glib-2.0"
+            "${GSTREAMER_ROOT}/lib/glib-2.0/include"
         )
     endif()
+
+    include_directories(${GSTREAMER_INCLUDE_DIRS})
+    link_directories(${GSTREAMER_LIBRARY_DIRS})
+
+    # Explicitly find the core GStreamer and GLib libs
+    if(PLATFORM_ANDROID)
+        set(GSTREAMER_CORE_LIB  "${GSTREAMER_LIBRARY_DIRS}/libgstreamer-1.0.so")
+        set(GST_BASE_LIB        "${GSTREAMER_LIBRARY_DIRS}/libgstbase-1.0.so")
+        set(GLIB_LIB            "${GSTREAMER_LIBRARY_DIRS}/libglib-2.0.so")
+        set(GOBJECT_LIB         "${GSTREAMER_LIBRARY_DIRS}/libgobject-2.0.so")
+    else()
+        find_library(GSTREAMER_CORE_LIB gstreamer-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+        find_library(GST_BASE_LIB gstbase-1.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+        find_library(GLIB_LIB glib-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+        find_library(GOBJECT_LIB gobject-2.0 HINTS ${GSTREAMER_LIBRARY_DIRS})
+    endif()
+
+    message(STATUS "GStreamer core: ${GSTREAMER_CORE_LIB}")
+    message(STATUS "GStreamer base: ${GST_BASE_LIB}")
+    message(STATUS "GLib: ${GLIB_LIB}")
+    message(STATUS "GObject: ${GOBJECT_LIB}")
+
+
+    set(GSTREAMER_LIBRARIES
+        ${GSTREAMER_CORE_LIB}
+        ${GST_BASE_LIB}
+        ${GOBJECT_LIB}
+        ${GLIB_LIB}
+    )
+endif()
 if(NOT PLATFORM_IOS)
     #-----------------------------------------------------------
     # WebAssembly Micro Runtime (WAMR)
@@ -238,7 +230,10 @@ endif()
 #-----------------------------------------------------------
 # Target setup
 #-----------------------------------------------------------
-file(GLOB SRC src/*.c src/*.cpp)
+file(GLOB_RECURSE SRC CONFIGURE_DEPENDS
+    src/*.c
+    src/*.cpp
+)
 
 if(PLATFORM_IOS)
     add_executable(framebolt MACOSX_BUNDLE ${SRC})
@@ -261,7 +256,7 @@ elseif(PLATFORM_ANDROID)
     target_link_libraries(main PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf imgui)
     target_compile_definitions(main PRIVATE SDL_STATIC)
 elseif(PLATFORM_IOS)
-    target_link_libraries(framebolt PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf)
+    target_link_libraries(framebolt PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf imgui)
 else()
     target_link_libraries(framebolt PRIVATE SDL3::SDL3-static SDL3_ttf::SDL3_ttf imgui)
 endif()

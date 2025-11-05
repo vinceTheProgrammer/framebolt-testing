@@ -1,16 +1,14 @@
 # Framebolt
 
-## Prepare To Build (for all platforms)
+## Prepare To Build (necessary for all platforms)
+if you're on a unix system
 ```
-git clone https://github.com/vinceTheProgrammer/framebolt-testing
-cd framebolt-testing
-git clone https://github.com/libsdl-org/SDL.git external/SDL
-git clone https://github.com/libsdl-org/SDL_ttf.git external/SDL_ttf
-cd external/SDL_ttf
-./external/download.sh
-cd ../..
-git clone https://github.com/bytecodealliance/wasm-micro-runtime.git external/wamr
-git clone --single-branch --branch docking https://github.com/ocornut/imgui.git external/imgui
+./scripts/_prepare/common/prepare_external_repos.sh
+```
+
+if you're on windows
+```
+./scripts/_prepare/windows/prepare_external_repos.ps1
 ```
 
 ## Build Desktop
