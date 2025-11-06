@@ -1,5 +1,5 @@
 # Path where you extracted GStreamer in your script
-export GST_IOS_DIR="$HOME/gstreamer-ios/Library/Frameworks/GStreamer.framework/Versions/1.0"
+export GST_IOS_DIR="extracted_pkg/ios-framework-1.26.7-universal.pkg/Payload/GStreamer.framework/Versions/1.0"
 
 echo "📍 Using GStreamer iOS SDK at: $GST_IOS_DIR"
 ls -R "$GST_IOS_DIR" | head -n 40  # (optional) debug listing
