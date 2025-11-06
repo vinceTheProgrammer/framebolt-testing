@@ -2,31 +2,90 @@
 #include <SDL3/SDL_main.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_system.h>
 #include <gst/gst.h>
 #include <stdio.h>
+#include <string>
+#include "SDL3/SDL_init.h"
+#include "gst/gstinfo.h"
+#include "gst/gstregistry.h"
 #include "imgui.h"
 #include "backends/imgui_impl_sdl3.h"
 #include "backends/imgui_impl_sdlrenderer3.h"
 
+
+#if defined(__ANDROID__)
+#include <jni.h>
+#include <android/log.h>
+
+#define GST_TAG "GStreamer"
+
+static void G_GNUC_NO_INSTRUMENT
+android_gst_log_function(GstDebugCategory *category,
+                         GstDebugLevel level,
+                         const gchar *file,
+                         const gchar *function,
+                         gint line,
+                         GObject *object,
+                         GstDebugMessage *message,
+                         gpointer user_data)
+{
+
+    SDL_Log("hello");
+
+    const gchar *cat_name = gst_debug_category_get_name(category);
+    const gchar *msg = gst_debug_message_get(message);
+    int android_log_level;
+
+    switch (level) {
+        case GST_LEVEL_ERROR:
+            android_log_level = ANDROID_LOG_ERROR; break;
+        case GST_LEVEL_WARNING:
+            android_log_level = ANDROID_LOG_WARN; break;
+        case GST_LEVEL_INFO:
+            android_log_level = ANDROID_LOG_INFO; break;
+        case GST_LEVEL_DEBUG:
+            android_log_level = ANDROID_LOG_DEBUG; break;
+        default:
+            android_log_level = ANDROID_LOG_VERBOSE; break;
+    }
+
+    __android_log_print(android_log_level, GST_TAG,
+                        "[%s] %s:%d:%s() %s",
+                        cat_name, file, line, function, msg);
+}
+#endif
+
 int main(int argc, char *argv[])
 {
+    #if defined(__ANDROID__)
+    JNIEnv* env = static_cast<JNIEnv*>(SDL_GetAndroidJNIEnv());
+    jobject activity = (jobject)SDL_GetAndroidActivity();
+
+    // Get the ApplicationInfo.nativeLibraryDir
+    jclass clazz(env->GetObjectClass(activity));
+    jmethodID getAppInfo = env->GetMethodID(clazz, "getApplicationInfo", "()Landroid/content/pm/ApplicationInfo;");
+    jobject appInfo = env->CallObjectMethod(activity, getAppInfo);
+    jclass appInfoClass = env->GetObjectClass(appInfo);
+    jfieldID nativeLibDirField = env->GetFieldID(appInfoClass, "nativeLibraryDir", "Ljava/lang/String;");
+    jstring nativeLibDir = (jstring)env->GetObjectField(appInfo, nativeLibDirField);
+
+    std::string libDir = env->GetStringUTFChars(nativeLibDir, nullptr);
+    setenv("GST_PLUGIN_PATH", libDir.c_str(), 1);
+
+    gst_debug_remove_log_function (NULL);
+    gst_debug_set_default_threshold (GST_LEVEL_DEBUG);
+    gst_debug_add_log_function ((GstLogFunction) android_gst_log_function, NULL, NULL);
+    #endif
+
     // --- Initialize GStreamer ---
     gst_init(&argc, &argv);
-
-    guint major, minor, micro, nano;
-    gst_version(&major, &minor, &micro, &nano);
-
-    char version_text[128];
-    snprintf(version_text, sizeof(version_text),
-             "GStreamer version: %u.%u.%u", major, minor, micro);
 
     // --- Initialize SDL and TTF ---
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
         return 1;
     }
-
-    SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
 
     if (!TTF_Init()) {
         SDL_Log("TTF_Init failed: %s", SDL_GetError());

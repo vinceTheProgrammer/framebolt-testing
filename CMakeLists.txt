@@ -103,21 +103,11 @@ else()
 
     message(STATUS "GStreamer library dirs: ${GSTREAMER_LIBRARY_DIRS}")
 
-    if(PLATFORM_IOS)
-        set(GSTREAMER_INCLUDE_DIRS
-            "${GSTREAMER_ROOT}/Headers"
-            "${GSTREAMER_ROOT}/Headers/gstreamer-1.0"
-            "${GSTREAMER_ROOT}/Headers/gst"
-            "${GSTREAMER_ROOT}/Headers/glib-2.0"
-            "${GSTREAMER_ROOT}/Headers/gobject"
-        )
-    else()
-        set(GSTREAMER_INCLUDE_DIRS
-            "${GSTREAMER_ROOT}/include/gstreamer-1.0"
-            "${GSTREAMER_ROOT}/include/glib-2.0"
-            "${GSTREAMER_ROOT}/lib/glib-2.0/include"
-        )
-    endif()
+    set(GSTREAMER_INCLUDE_DIRS
+        "${GSTREAMER_ROOT}/include/gstreamer-1.0"
+        "${GSTREAMER_ROOT}/include/glib-2.0"
+        "${GSTREAMER_ROOT}/lib/glib-2.0/include"
+    )
 
     include_directories(${GSTREAMER_INCLUDE_DIRS})
     link_directories(${GSTREAMER_LIBRARY_DIRS})

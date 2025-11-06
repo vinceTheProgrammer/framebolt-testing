@@ -60,3 +60,12 @@ xcrun simctl boot "$DEVICE" || true
 # Install and launch
 xcrun simctl install booted build-ios/Debug/framebolt.app
 xcrun simctl launch booted com.vinceTheProgrammer.framebolt
+
+
+
+--------------------------
+pip install compiledb
+compiledb merge \
+  android-project/app/.cxx/Debug/2p3q1b65/arm64-v8a/compile_commands.json \
+  build/compile_commands.json \
+  -o compile_commands.json
