@@ -8,10 +8,12 @@
 #include <string>
 #include "SDL3/SDL_init.h"
 #include "gst/gstinfo.h"
+#include "gst/gstplugin.h"
 #include "gst/gstregistry.h"
 #include "imgui.h"
 #include "backends/imgui_impl_sdl3.h"
 #include "backends/imgui_impl_sdlrenderer3.h"
+#include <gio/gio.h>
 
 
 #if defined(__ANDROID__)
@@ -90,11 +92,20 @@ int main(int argc, char *argv[])
     std::string base_path = sdl_path;
     SDL_free((void*)sdl_path);
     setenv("GST_PLUGIN_PATH", (base_path + "/lib/gstreamer-1.0").c_str(), 1);
+    #else
+    GST_PLUGIN_STATIC_DECLARE(videoconvertscale);
     #endif
     #endif
 
     // --- Initialize GStreamer ---
     gst_init(&argc, &argv);
+
+    #if defined(__APPLE__)
+    #if TARGET_OS_OSX
+    #else
+    GST_PLUGIN_STATIC_REGISTER(videoconvertscale);
+    #endif
+    #endif
 
     // --- Initialize SDL and TTF ---
     if (!SDL_Init(SDL_INIT_VIDEO)) {
