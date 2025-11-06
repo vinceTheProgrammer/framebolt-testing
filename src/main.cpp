@@ -15,6 +15,16 @@
 #include "backends/imgui_impl_sdlrenderer3.h"
 #include <gio/gio.h>
 
+#if defined(__APPLE__)
+#if TARGET_OS_OSX
+#else
+G_BEGIN_DECLS
+GST_PLUGIN_STATIC_DECLARE(videoconvertscale);
+GST_PLUGIN_STATIC_DECLARE(coreelements);
+G_END_DECLS
+#endif
+#endif
+
 
 #if defined(__ANDROID__)
 #include <jni.h>
@@ -92,10 +102,6 @@ int main(int argc, char *argv[])
     std::string base_path = sdl_path;
     SDL_free((void*)sdl_path);
     setenv("GST_PLUGIN_PATH", (base_path + "/lib/gstreamer-1.0").c_str(), 1);
-    #else
-    G_BEGIN_DECLS
-    GST_PLUGIN_STATIC_DECLARE(videoconvertscale);
-    G_END_DECLS
     #endif
     #endif
 
@@ -105,9 +111,8 @@ int main(int argc, char *argv[])
     #if defined(__APPLE__)
     #if TARGET_OS_OSX
     #else
-    G_BEGIN_DECLS
     GST_PLUGIN_STATIC_REGISTER(videoconvertscale);
-    G_END_DECLS
+    GST_PLUGIN_STATIC_REGISTER(coreelements);
     #endif
     #endif
 
