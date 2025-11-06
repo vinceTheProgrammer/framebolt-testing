@@ -78,6 +78,21 @@ int main(int argc, char *argv[])
     gst_debug_add_log_function ((GstLogFunction) android_gst_log_function, NULL, NULL);
     #endif
 
+    #if defined(__APPLE__)
+    #include "TargetConditionals.h"
+    #if TARGET_OS_OSX
+    const char* sdl_path = SDL_GetBasePath();
+    if (!sdl_path) {
+        printf("SDL_GetBasePath Error: %s\n", SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
+    std::string base_path = sdl_path;
+    SDL_free((void*)sdl_path);
+    setenv("GST_PLUGIN_PATH", (base_path + "/lib/gstreamer-1.0").c_str(), 1);
+    #endif
+    #endif
+
     // --- Initialize GStreamer ---
     gst_init(&argc, &argv);
 
