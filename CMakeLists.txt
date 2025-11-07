@@ -138,84 +138,82 @@ else()
         ${GLIB_LIB}
     )
 endif()
-if(NOT PLATFORM_IOS)
-    #-----------------------------------------------------------
-    # WebAssembly Micro Runtime (WAMR)
-    #-----------------------------------------------------------
-    set(WAMR_ROOT_DIR "${CMAKE_SOURCE_DIR}/external/wamr")
 
-    # Configure WAMR build features
-    # You can adjust these per-platform as needed
-    if(PLATFORM_LINUX)
-        set(WAMR_BUILD_PLATFORM "linux")
+#-----------------------------------------------------------
+# WebAssembly Micro Runtime (WAMR)
+#-----------------------------------------------------------
+set(WAMR_ROOT_DIR "${CMAKE_SOURCE_DIR}/external/wamr")
+
+# Configure WAMR build features
+# You can adjust these per-platform as needed
+if(PLATFORM_LINUX)
+    set(WAMR_BUILD_PLATFORM "linux")
+    set(WAMR_BUILD_TARGET "X86_64")
+elseif(PLATFORM_WINDOWS)
+    set(WAMR_BUILD_PLATFORM "windows")
+    set(WAMR_BUILD_TARGET "X86_64")
+elseif(PLATFORM_MAC)
+    set(WAMR_BUILD_PLATFORM "darwin")
+    set(WAMR_BUILD_TARGET "X86_64")
+elseif(PLATFORM_ANDROID)
+    set(WAMR_BUILD_PLATFORM "android")
+
+    # Set WAMR target based on ANDROID_ABI
+    if(ANDROID_ABI STREQUAL "arm64-v8a")
+        set(WAMR_BUILD_TARGET "AARCH64")
+    elseif(ANDROID_ABI STREQUAL "armeabi-v7a")
+        set(WAMR_BUILD_TARGET "ARM32")
+    elseif(ANDROID_ABI STREQUAL "x86")
+        set(WAMR_BUILD_TARGET "X86_32")
+    elseif(ANDROID_ABI STREQUAL "x86_64")
         set(WAMR_BUILD_TARGET "X86_64")
-    elseif(PLATFORM_WINDOWS)
-        set(WAMR_BUILD_PLATFORM "windows")
-        set(WAMR_BUILD_TARGET "X86_64")
-    elseif(PLATFORM_MAC)
-        set(WAMR_BUILD_PLATFORM "darwin")
-        set(WAMR_BUILD_TARGET "X86_64")
-    elseif(PLATFORM_ANDROID)
-        set(WAMR_BUILD_PLATFORM "android")
-
-        # Set WAMR target based on ANDROID_ABI
-        if(ANDROID_ABI STREQUAL "arm64-v8a")
-            set(WAMR_BUILD_TARGET "AARCH64")
-        elseif(ANDROID_ABI STREQUAL "armeabi-v7a")
-            set(WAMR_BUILD_TARGET "ARM32")
-        elseif(ANDROID_ABI STREQUAL "x86")
-            set(WAMR_BUILD_TARGET "X86_32")
-        elseif(ANDROID_ABI STREQUAL "x86_64")
-            set(WAMR_BUILD_TARGET "X86_64")
-        else()
-            message(FATAL_ERROR "Unsupported ANDROID_ABI: ${ANDROID_ABI}")
-        endif()
-
-        # Disable MAP_32BIT for Android builds
-        # add_definitions(-DWASM_USE_MAP_32BIT=0)
-
-    elseif(PLATFORM_IOS)
-        set(WAMR_BUILD_PLATFORM "darwin")  # iOS uses Darwin base
-
-        # Handle both simulator architectures
-        if(CMAKE_OSX_SYSROOT MATCHES "iphonesimulator")
-            if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
-                set(WAMR_BUILD_TARGET "AARCH64")  # Apple Silicon simulator
-            elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
-                set(WAMR_BUILD_TARGET "X86_64")   # Intel simulator
-            else()
-                message(FATAL_ERROR "Unsupported simulator architecture: ${CMAKE_OSX_ARCHITECTURES}")
-            endif()
-        else()
-            # In case you ever build for real devices later
-            set(WAMR_BUILD_TARGET "AARCH64")
-        endif()
-
-        # iOS sandbox and linker differences
-        add_definitions(
-            -DWASM_USE_MAP_32BIT=0
-            -DWASM_DISABLE_HW_BOUND_CHECK=1
-            -DWASM_DISABLE_PTHREAD_SETNAME=1
-        )
-
-        message(STATUS "Building WAMR for iOS (${WAMR_BUILD_PLATFORM}, target=${WAMR_BUILD_TARGET})")
+    else()
+        message(FATAL_ERROR "Unsupported ANDROID_ABI: ${ANDROID_ABI}")
     endif()
 
-    set(WAMR_BUILD_INTERP 1)
-    set(WAMR_BUILD_FAST_INTERP 1)
-    set(WAMR_BUILD_AOT 1)
-    set(WAMR_BUILD_LIBC_BUILTIN 1)
-    set(WAMR_BUILD_LIBC_WASI 1)
-    set(WAMR_BUILD_SIMD 1)
+    # Disable MAP_32BIT for Android builds
+    # add_definitions(-DWASM_USE_MAP_32BIT=0)
 
-    # Include WAMR build script
-    include(${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
+elseif(PLATFORM_IOS)
+    set(WAMR_BUILD_PLATFORM "darwin")  # iOS uses Darwin base
 
-    # Define the static library target for WAMR
-    add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE})
-    target_include_directories(vmlib PUBLIC ${WAMR_RUNTIME_LIB_INCLUDE_DIRS})
+    # Handle both simulator architectures
+    if(CMAKE_OSX_SYSROOT MATCHES "iphonesimulator")
+        if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+            set(WAMR_BUILD_TARGET "AARCH64")  # Apple Silicon simulator
+        elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
+            set(WAMR_BUILD_TARGET "X86_64")   # Intel simulator
+        else()
+            message(FATAL_ERROR "Unsupported simulator architecture: ${CMAKE_OSX_ARCHITECTURES}")
+        endif()
+    else()
+        # In case you ever build for real devices later
+        set(WAMR_BUILD_TARGET "AARCH64")
+    endif()
 
+    # iOS sandbox and linker differences
+    add_definitions(
+        -DWASM_USE_MAP_32BIT=0
+        -DWASM_DISABLE_HW_BOUND_CHECK=1
+        -DWASM_DISABLE_PTHREAD_SETNAME=1
+    )
+
+    message(STATUS "Building WAMR for iOS (${WAMR_BUILD_PLATFORM}, target=${WAMR_BUILD_TARGET})")
 endif()
+
+set(WAMR_BUILD_INTERP 1)
+set(WAMR_BUILD_FAST_INTERP 1)
+set(WAMR_BUILD_AOT 1)
+set(WAMR_BUILD_LIBC_BUILTIN 1)
+set(WAMR_BUILD_LIBC_WASI 1)
+set(WAMR_BUILD_SIMD 1)
+
+# Include WAMR build script
+include(${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
+
+# Define the static library target for WAMR
+add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE})
+target_include_directories(vmlib PUBLIC ${WAMR_RUNTIME_LIB_INCLUDE_DIRS})
 
 #-----------------------------------------------------------
 # Target setup
@@ -277,7 +275,7 @@ endif()
 # Link your app with the WAMR runtime
 if(PLATFORM_ANDROID)
     target_link_libraries(main PRIVATE vmlib)
-elseif(NOT PLATFORM_IOS)
+else()
     target_link_libraries(framebolt PRIVATE vmlib)
 endif()
 
